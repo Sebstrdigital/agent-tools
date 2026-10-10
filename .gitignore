@@ -1,0 +1,24 @@
+# OS metadata
+.DS_Store
+
+# Generated runtime artifacts
+node_modules/
+node-compile-cache/
+__pycache__/
+*.pyc
+
+# Preserved personal settings and advisory state: local only
+platforms/claude-code/.claude/settings.local.json
+platforms/claude-code/.agentic-tools/
+
+# Local preservation evidence and reference clones (not publication inputs)
+docs/migration-copy-manifest.json
+platforms/claude-code/external/
+platforms/pi/docs/delivery/
+platforms/pi/docs/workflows/first-release/
+platforms/pi/docs/workflows/autonomous-delivery-*
+platforms/pi/docs/workflows/dikta-ultra-retrospective.md
+platforms/pi/docs/handover-day1.md
+platforms/pi/CLAUDE.md
+
+# Temporary manifests used during isolated validation
