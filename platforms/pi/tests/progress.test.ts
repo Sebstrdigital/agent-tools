@@ -14,13 +14,13 @@ const {visibleWidth}=await import(resolve(host,'node_modules/@earendil-works/pi-
 const path=resolve(root,'extensions/lean-progress/index.ts');
 async function fixture(ui=false,tools:any[]=[],commands:any[]=[]) {
  const loaded=await loadExtensions([path],root,createEventBus());assert.deepEqual(loaded.errors,[]);
- const ext=loaded.extensions[0];const entries:any[]=[];let branch=entries;const widgets:any[]=[];
+ const ext=loaded.extensions[0];const entries:any[]=[];let branch=entries;const widgets:any[]=[];const notifications:any[]=[];
  loaded.runtime.appendEntry=(customType:any,data:any)=>entries.push({type:'custom',customType,data:structuredClone(data)});
  loaded.runtime.getAllTools=()=>tools;loaded.runtime.getCommands=()=>commands;
- const ctx:any={cwd:root,hasUI:ui,mode:ui?'tui':'json',sessionManager:{getBranch:()=>branch},ui:{setWidget:(key:any,factory:any,options:any)=>widgets.push({key,factory,options}),notify:()=>{}}};
+ const ctx:any={cwd:root,hasUI:ui,mode:ui?'tui':'json',sessionManager:{getBranch:()=>branch},ui:{setWidget:(key:any,factory:any,options:any)=>widgets.push({key,factory,options}),notify:(text:any)=>notifications.push(text)}};
  const emit=async(name:string,event:any={})=>{let result;for(const h of ext.handlers.get(name)??[])result=await h(event,ctx);return result;};
  const write=(items:any)=>ext.tools.get('todo_write').definition.execute('id',{items},undefined,undefined,ctx);
- return {loaded,ext,entries,widgets,ctx,emit,write,setBranch:(b:any[])=>branch=b};
+ return {loaded,ext,entries,widgets,notifications,ctx,emit,write,setBranch:(b:any[])=>branch=b};
 }
 const items=[{content:'accepted prerequisite',status:'completed'},{content:'active 測試 😀 é',status:'in_progress'},...['blocked','paused','cancelled','abandoned'].map(s=>({content:`[${s}] retained reason`,status:'pending'}))];
 test('lossless reviewed registry files reproduce from source without execution artifacts',()=>{
@@ -45,6 +45,9 @@ test('registered guidance permits truthful zero-active snapshots while execution
  assert.match(description,/only lead-accepted work is completed/);
  assert.match(description,/unresolved blocked\/paused\/cancelled\/abandoned rows remain pending with explicit labels and reasons/);
  assert.match(description,/Worker completion is not acceptance/);
+ assert.match(description,/Before marking any milestone completed, validate its acceptance condition and inspect the evidence/);
+ assert.match(description,/Failed or blocked validation stays pending with a reason/);
+ assert.match(description,/Setup alone and diagnostic bypasses do not prove the normal user path works/);
  const pending=['blocked','paused','cancelled','abandoned'].map(state=>({content:`[${state}] retained unresolved reason`,status:'pending'}));
  const completed=[{content:'lead-accepted work; evidence checked',status:'completed'}];
  for(const snapshot of [pending,completed,[]]){
@@ -84,6 +87,7 @@ test('actual installer-created SYMLINK path loads one controller and writes stat
  const ctx:any={cwd:root,hasUI:false,mode:'json',sessionManager:{getBranch:()=>entries},ui:{setWidget:()=>{throw Error('unexpected UI')},notify:()=>{throw Error('unexpected UI')}}};
  for(const h of ext.handlers.get('session_start')??[])await h({},ctx);
  assert.deepEqual([...ext.tools.keys()],['todo_write']);assert.deepEqual([...ext.commands.keys()],['todos']);
+ assert.match(ext.tools.get('todo_write').definition.description,/Before marking any milestone completed, validate its acceptance condition and inspect the evidence/,'installed symlink route exposes the same validation-before-completion rule');
  const result=await ext.tools.get('todo_write').definition.execute('installed',{items},undefined,undefined,ctx);
  assert.equal(result.details.count,items.length);assert.equal(entries.length,1);assert.equal(entries[0].customType,'todo-state');assert.deepEqual(entries[0].data.items,items);
  console.log(JSON.stringify({outcome:'PASS',tools:[...ext.tools.keys()],commands:[...ext.commands.keys()],stateEntries:entries.length,fixtureRetained:home}));
@@ -103,10 +107,44 @@ test('branch-local reload, one-shot supported compaction/tree recovery and clear
  await reload.ext.commands.get('todos').handler('unknown',reload.ctx);await reload.write(items);await reload.ext.commands.get('todos').handler('clear',reload.ctx);assert.deepEqual(reload.entries.at(-1).data.items,[]);
  const next=await reload.write(items);assert.match(next.content[0].text,/user cleared/);
 });
-test('actual host Text fits narrow/wide Unicode and retains explicit state labels; shutdown clears',async()=>{
+test('responsive component fits narrow/wide Unicode and retains explicit state labels; shutdown clears',async()=>{
  const f=await fixture(true);await f.emit('session_start');await f.write(items);const widget=f.widgets.at(-1);assert.equal(widget.options.placement,'aboveEditor');
  const text=widget.factory({}, {fg:(_c:any,s:any)=>s,bold:(s:any)=>s});
  for(const width of [12,20,54,100]) {const lines=text.render(width);assert.ok(lines.every((s:any)=>visibleWidth(s)<=width));console.log(JSON.stringify({width,lines}));}
  const wide=text.render(100).join('\n');for(const label of ['✔','▸','[blocked]','[paused]','[cancelled]','[abandoned]'])assert.ok(wide.includes(label));
  await f.emit('session_shutdown');assert.equal(f.widgets.at(-1).factory,undefined);
+});
+test('completed lists hide without clearing snapshots, reappear for unfinished work, and replay across branches',async()=>{
+ const done=items.map(item=>({...item,status:'completed'}));
+ const f=await fixture(true);await f.emit('session_start');await f.write(items);assert.equal(typeof f.widgets.at(-1).factory,'function');
+ await f.write(done);assert.equal(f.widgets.at(-1).factory,undefined,'all completed removes widget rather than minimizing');
+ assert.deepEqual(f.entries.at(-1).data.items,done,'hidden checklist remains persisted');
+ await f.ext.commands.get('todos').handler('status',f.ctx);assert.match(f.notifications.at(-1),/6\/6 done/);assert.match(f.notifications.at(-1),/accepted prerequisite/);
+ const reload=await fixture(true);reload.setBranch(f.entries);await reload.emit('session_start');assert.equal(reload.widgets.at(-1).factory,undefined,'completed snapshot stays hidden after reload');
+ reload.setBranch([f.entries[0]]);await reload.emit('session_tree');assert.equal(typeof reload.widgets.at(-1).factory,'function','unfinished branch reappears');
+ reload.setBranch(f.entries);await reload.emit('session_tree');assert.equal(reload.widgets.at(-1).factory,undefined);
+ await f.write([{content:'[paused] retained unfinished reason',status:'pending'}]);assert.equal(typeof f.widgets.at(-1).factory,'function');
+ await f.ext.commands.get('todos').handler('clear',f.ctx);assert.equal(f.widgets.at(-1).factory,undefined);assert.deepEqual(f.entries.at(-1).data.items,[]);
+});
+test('todo box uses available display columns, aligns every border, wraps long text, and recomputes on resize/theme',async()=>{
+ const f=await fixture(true);await f.emit('session_start');
+ const long='Verify the orchestrator and worker hide routes preserve the existing process identity and return focus without disturbing unrelated panes';
+ await f.write([{content:long,status:'in_progress'},{content:'Unicode 測試 👩‍💻 é and a-long-unbroken-identifier'.repeat(3),status:'pending'}]);
+ const theme={fg:(_c:any,s:any)=>'\x1b[36m'+s+'\x1b[0m',bold:(s:any)=>'\x1b[1m'+s+'\x1b[0m'};
+ const component=f.widgets.at(-1).factory({},theme);
+ const strip=(s:string)=>s.replace(/\x1b\[[0-9;]*m/g,'');
+ for(const width of [0,1,2,4,7,8,12,20,54,80,120,200]){
+  const lines=component.render(width);assert.ok(lines.every((line:string)=>visibleWidth(line)<=width),String(width));
+  if(width>=8){assert.ok(lines.every((line:string)=>visibleWidth(line)===width),'every border aligned at '+width);assert.ok(strip(lines[0]).startsWith('╭'));assert.ok(strip(lines[0]).endsWith('╮'));for(const line of lines.slice(1,-1)){assert.ok(strip(line).startsWith('│'));assert.ok(strip(line).endsWith('│'));}}
+ }
+ const plain=component.render(80).map(strip).join('\n');assert.match(plain,/unrelated panes/,'normal long task is no longer cut at 44 chars');
+ assert.equal(visibleWidth(component.render(120)[0]),120);assert.equal(visibleWidth(component.render(20)[0]),20,'resize changes box width rather than wrapping fixed frame');
+ assert.equal(typeof component.invalidate,'function');component.invalidate();assert.match(component.render(80)[0],/\x1b\[36m/);
+});
+test('embedded newline and tab text cannot overflow narrow todo frame',async()=>{
+ const f=await fixture(true);await f.emit('session_start');
+ await f.write([{content:'first line\n\tfoo',status:'pending'},{content:'a\n\tfoo',status:'pending'}]);
+ assert.equal(f.entries.at(-1).data.items[0].content,'first line\n\tfoo','only the presentation may be bounded; stored text stays intact');
+ const component=f.widgets.at(-1).factory({}, {fg:(_c:any,s:any)=>s,bold:(s:any)=>s});
+ for(const width of [8,9,10,12,20,80])assert.ok(component.render(width).every((line:string)=>visibleWidth(line)===width),'newline/tab frame alignment at '+width);
 });

@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/edlsh/pi-ask-user",
+  "revision": "e8b59a5114bb1cf4fca239b75976483703c9783f",
+  "version": "0.16.0",
+  "license": "MIT",
+  "usage": "Tool-only runtime input. Never register this vendor directory as a Pi package. Bundled upstream decision-gating skill deliberately not copied or installed. The original package.json is retained byte-identically for version lookup, not package resource discovery.",
+  "files": {
+    "index.ts": "64026939055b24a1ff2670f26a54f27140292dc64aff0f3222dcedb7968e8a76",
+    "single-select-layout.ts": "f616587129b748ae0534fbe384b77131de5347be4513f04799e01fd15ad46307",
+    "package.json": "4a135790a74335ae5e7707b51c6c72ce310cf226bfcc04efcdb2f98a59fd03ec",
+    "LICENSE": "3c822b362f67a7ebd817e767107465966cb3ca98111b2b775cbe3f47b28e87f7",
+    "README.md": "603d29bc5811b9e547ab8abe91a50995c88d62f421bb73f72e71ee695de1528b"
+  }
+}

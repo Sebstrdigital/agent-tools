@@ -18,7 +18,7 @@ async function hostPath() {
   }
 }
 
-for (const scenario of ["developer-escalation", "scout-escalation", "team-escalation", "developer-escalation-failure", "scout-escalation-failure", "team-escalation-failure", "developer-escalation-persistence"]) {
+for (const scenario of ["team-unbounded", "team-no-repair-quota", "developer-escalation", "scout-escalation", "team-escalation", "developer-escalation-failure", "scout-escalation-failure", "team-escalation-failure", "developer-escalation-persistence", "developer-execution-budget"]) {
   test(`fresh same-role escalation: ${scenario}`, async t => {
     const dir = await mkdtemp(join(tmpdir(), "delivery-tmux-integration-"));
     t.after(() => rm(dir, { recursive: true, force: true }));
@@ -39,7 +39,9 @@ for (const scenario of ["developer-escalation", "scout-escalation", "team-escala
     await writeFile(join(bin, "tmux"), `#!/bin/sh
 printf '%s\\n' "$*" >> "$FAKE_LOG"
 case "$1" in
- split-window) n=0; if [ -f "$FAKE_LOG.count" ]; then read n < "$FAKE_LOG.count"; fi; n=$((n+1)); printf '%s\\n' "$n" > "$FAKE_LOG.count"; printf '%%owned%s\\n' "$n" ;;
+ display-message) printf '$fake-session\\n' ;;
+ new-session) printf '$parking %%parking-anchor\\n' ;;
+ new-window) n=0; if [ -f "$FAKE_LOG.count" ]; then read n < "$FAKE_LOG.count"; fi; n=$((n+1)); printf '%s\\n' "$n" > "$FAKE_LOG.count"; printf '%%owned%s\\n' "$n" ;;
  send-keys) if [ -f "$FAIL_TRANSPORT" ]; then exit 23; fi ;;
  capture-pane) if [ -f "$DONE_FILE" ]; then printf '__SUBAGENT_DONE_0__\\n'; fi ;;
  kill-pane) if [ -f "$FAIL_CLEANUP" ]; then exit 29; fi; exit 0 ;;
@@ -89,7 +91,7 @@ esac
       runtime.sendMessage=(message)=>messages.push(message);
       const parent=dir+'/parent.jsonl'; writeFileSync(parent,JSON.stringify({type:'session',version:3,id:'parent',cwd:dir})+'\\n');
       if(scenario==='old-owned') entries.push({type:'custom',customType:'delivery-tmux-owned-v1',data:{name:'legacy',version:0}});
-      const models=['gpt-5.4-mini','gpt-5.6-terra','gpt-5.6-sol'].map(id=>({provider:'openai',id,api:'openai-responses',reasoning:true,thinkingLevelMap:{off:'none',xhigh:'xhigh'}}));
+      const models=['gpt-5.4-mini','gpt-5.6-terra','gpt-6.1-terra','gpt-6.1-sol','gpt-6-luna'].map(id=>({provider:'openai',id,api:'openai-responses',reasoning:true,thinkingLevelMap:{off:id==='gpt-6.1-sol'?null:'none',minimal:null,xhigh:'xhigh'}}));
       models.push({provider:'approved',id:'model',reasoning:true});
       const {ModelRegistry}=await import(${JSON.stringify(join(host, "dist/core/model-registry.js"))});
       const registry=new ModelRegistry({getError:()=>undefined,getModel:(provider,id)=>models.find(m=>m.provider===provider&&m.id===id),getAvailableSnapshot:()=>models});
@@ -105,14 +107,20 @@ esac
       } else {
         await start(extension);
         assert.deepEqual([...extension.tools.keys()].sort(),['developer','scout','subagent','subagent_message','subagents_list'].sort());
-        assert.equal(extension.commands.size,0);
-        for(const tool of extension.tools.values()) {assert.equal(tool.definition.exposure,'model-only');assert.equal(tool.definition.executionMode,'sequential');}
+        assert.deepEqual([...extension.commands.keys()],['subagents']);
+        for(const tool of extension.tools.values()) {assert.equal(tool.definition.exposure,'model-only');assert.equal(tool.definition.executionMode,'parallel');}
         const rawCall=(name,args,context=ctx)=>extension.tools.get(name).definition.execute('id',args,undefined,undefined,context);
 
-        const leaseTimers=[];
-        globalThis.setTimeout=(fn,ms,...args)=>{if(ms>=60000)leaseTimers.push(ms);return realTimeout(fn,ms,...args);};
+        const leaseTimers=[], leaseCallbacks=[];let executionNow=0;
+        if(scenario==='execution-budget') Object.defineProperty(performance,'now',{value:()=>executionNow,configurable:true});
+        globalThis.setTimeout=(fn,ms,...args)=>{
+          if(ms>=60000) {leaseTimers.push(ms);leaseCallbacks.push(fn);}
+          return realTimeout(fn,scenario==='execution-budget'&&ms>=60000?2147483647:ms,...args);
+        };
         const binding={id:'assignment-1',scopeRef:'scope#1',approvalRef:scout?scoutAuthority.discoveryAuthorityRef:authority.approvalRef,
           packetRef:scout?scoutAuthority.discoveryAuthorityRef:authority.packetRef,effortMinutes:30,repairAttempts:2};
+        if(variant==='team-no-repair-quota'||variant==='team-unbounded') delete binding.repairAttempts;
+        if(variant==='team-unbounded') delete binding.effortMinutes;
         const launch=(name,extra={})=>scout?rawCall('scout',{...scoutAuthority,name,assignment:binding,...extra}):
           developer?rawCall('developer',{...authority,name,assignment:binding,...extra}):
           rawCall('subagent',{agent:'builder',task:'Remaining approved work',name,assignment:binding,...extra});
@@ -120,15 +128,63 @@ esac
         const ledger=()=>entries.filter(e=>e.customType==='delivery-tmux-lineage-v1').at(-1).data;
         const log=()=>existsSync(process.env.FAKE_LOG)?readFileSync(process.env.FAKE_LOG,'utf8'):'';
         const reject=async(extra,pattern=/./)=>{const before=log();await assert.rejects(launch('replacement',extra),pattern);assert.equal(log(),before,'No allocation on rejection');};
-        await reject({assignment:{...binding,effortMinutes:0}},/binding/);assert.equal(log(),'');
+        await reject({assignment:{...binding,effortMinutes:0}},/binding/);
+        await reject({assignment:{...binding,effortMinutes:Number.MAX_VALUE}},/binding/);assert.equal(log(),'');
         const first=launch('original');
         await assert.rejects(launch('concurrent-initial',{assignment:{...binding,id:'sibling-assignment'}}),/active/);
         assert.equal((await first).details.status,'started');
         assert.equal(ledger().consumed,false);const original=structuredClone(owned());
+        if(scenario==='execution-budget') {
+          assert.equal(leaseTimers.at(-1),1800000,'Declared 30-minute grant is not cut to 20');
+          executionNow+=120000;
+          const pending={type:'question',runId:original.id,questionId:'q',question:'Permission?',name:'original',agent:'builder'};
+          writeFileSync(original.sessionFile+'.pending-question',JSON.stringify(pending));
+          await sleep(1100);assert.equal(owned().executionMs,120000);
+          executionNow+=6*3600000;
+          await assert.rejects(rawCall('subagent_message',{name:'original',runId:original.id,questionId:'wrong',message:'No'}),/match/);
+          assert.equal(owned().executionMs,120000,'Waiting is not worker execution');
+          await rawCall('subagent_message',{name:'original',action:'pause'});await sleep(1100);
+          await rawCall('subagent_message',{name:'original',runId:original.id,questionId:'q',message:'Reply does not rearm'});
+          unlinkSync(original.sessionFile+'.pending-question');executionNow+=3600000;await sleep(1100);
+          assert.equal(owned().state,'paused');assert.equal(owned().executionMs,120000);
+          await rawCall('subagent_message',{name:'original',action:'rearm',message:'Approved remaining work',approvalRef:authority.approvalRef,packetRef:authority.packetRef});
+          unlinkSync(original.sessionFile+'.interrupt');await sleep(1100);
+          executionNow+=180000;
+          await rawCall('subagent_message',{name:'original',action:'stop'});await sleep(100);
+          assert.equal(owned().executionMs,300000);assert.equal(owned().state,'cancelled');
+          const before=log();
+          const overclaim={from:'original',runId:original.id,reason:'failed-bounded-repair',
+            partialSources:[{path:parent,sha256:(await import('node:crypto')).createHash('sha256').update(readFileSync(parent)).digest('hex')}],
+            findingsRef:'findings#1',failureEvidenceRef:'failure#1',remainingCriteria:'Original only',remainingEffortMinutes:26,
+            remainingRepairAttempts:1,terminalState:'cancelled',resourcesReleased:true,resourceEvidenceRef:'teardown#1'};
+          await assert.rejects(launch('overclaim',{escalation:overclaim}),/remaining effort/);assert.equal(log(),before);
+          writeFileSync(original.sessionFile,JSON.stringify({type:'session',version:3,id:'child',cwd:dir})+'\\n');
+          ctx.sessionManager.getBranch=()=>[];await start(extension);
+          const resumed=await rawCall('subagent_message',{name:'original',message:'Reconciled remaining approved work',approvalRef:authority.approvalRef,packetRef:authority.packetRef});
+          assert.equal(resumed.details.status,'started');assert.equal(leaseTimers.at(-1),1500000,'Reload/resume keeps only remaining 25 minutes');
+          executionNow+=1500000;leaseCallbacks.at(-1)();await sleep(100);
+          assert.equal(owned().state,'cancelled');assert.equal(owned().executionMs,1800000);
+          const afterTimeout=log();await assert.rejects(rawCall('subagent_message',{name:'original',message:'Cannot reset',approvalRef:authority.approvalRef,packetRef:authority.packetRef}),/exhausted/);
+          assert.equal(log(),afterTimeout);assert.ok(!messages.some(m=>m.details?.status==='completed'));
+          await stop(extension);
+          const saved=structuredClone(entries);
+          for(const corruption of ['missing','regressed']) {
+            entries.splice(0,entries.length,...structuredClone(saved));
+            const records=entries.filter(e=>e.customType==='delivery-tmux-owned-v1');
+            if(corruption==='missing') for(const e of records) {delete e.data.executionMs;delete e.data.runExecutionMs;}
+            else records.at(-1).data.executionMs=1;
+            await start(extension);
+            await assert.rejects(rawCall('subagent_message',{name:'original',message:'No reset from history',approvalRef:authority.approvalRef,packetRef:authority.packetRef}),/unmeasured|unavailable/);
+            assert.equal(log(),afterTimeout);
+          }
+          entries.splice(0,entries.length,...saved);await start(extension);await stop(extension);process.exit(0);
+        }
         const h={from:'original',runId:original.id,reason:variant.endsWith('failure')?'reasoning-complexity':'failed-bounded-repair',
           partialSources:[{path:parent,sha256:(await import('node:crypto')).createHash('sha256').update(readFileSync(parent)).digest('hex')}],
           findingsRef:'findings#1',failureEvidenceRef:'failed-bounded-repair#1',remainingCriteria:'Original acceptance only',
           remainingEffortMinutes:12,remainingRepairAttempts:1,terminalState:'cancelled',resourcesReleased:true,resourceEvidenceRef:'teardown#1'};
+        if(variant==='team-no-repair-quota'||variant==='team-unbounded') delete h.remainingRepairAttempts;
+        if(variant==='team-unbounded') delete h.remainingEffortMinutes;
         await reject({escalation:h},/terminal/);
         // A pending question is still running ownership; pause also retains it.
         writeFileSync(original.sessionFile+'.pending-question',JSON.stringify({type:'question',runId:original.id,questionId:'q',question:'Which?',name:'original',agent:scout?'scout':'builder'}));
@@ -142,7 +198,7 @@ esac
         for(const extra of [
           ...['scopeRef','approvalRef','packetRef'].map(k=>({assignment:{...binding,[k]:'changed'},escalation:h})),
           {escalation:{...h,runId:'other'}},{escalation:{...h,from:'foreign'}},
-          {escalation:{...h,remainingEffortMinutes:31}},{escalation:{...h,remainingRepairAttempts:2}},
+          ...(binding.effortMinutes===undefined?[]:[{escalation:{...h,remainingEffortMinutes:31}},{escalation:(({remainingEffortMinutes,...rest})=>rest)(h)}]),...(binding.repairAttempts===undefined?[]:[{escalation:{...h,remainingRepairAttempts:2}},{escalation:(({remainingRepairAttempts,...rest})=>rest)(h)}]),
           {escalation:{...h,resourcesReleased:false}},{escalation:{...h,reason:'red-test'}},
           {escalation:{...h,partialSources:[{path:parent,sha256:'0'.repeat(64)}]}},
           {escalation:{...h,findingsRef:''}},{escalation:{...h,remainingCriteria:''}},
@@ -173,12 +229,12 @@ esac
         }
         if(variant.endsWith('failure')) {writeFileSync(process.env.FAIL_TRANSPORT,'fail');await assert.rejects(launch('replacement',{escalation:h}));}
         else {
-          const pending=launch('replacement',{escalation:h,...(developer?{model:'openai/gpt-5.6-sol',thinking:'high'}:{profile:'strong'})});
-          const before=log();await assert.rejects(launch('sibling',{escalation:h}),/unconsumed/);assert.equal(log(),before);
+          const pending=launch('replacement',{escalation:h,...(developer?{model:'openai/gpt-6.1-sol',thinking:'high'}:{profile:'strong'})});
           assert.equal((await pending).details.status,'started');
+          const before=log();await assert.rejects(launch('sibling',{escalation:h}),/unconsumed/);assert.equal(log(),before);
         }
         assert.equal(ledger().consumed,true);assert.equal(ledger().rootName,'original');
-        if(!variant.endsWith('failure')) {assert.equal(leaseTimers.at(-1),720000,'Remaining allowance shortens, never inflates fixed ceiling');assert.equal(owned().loadout.thinking,scout?'medium':'high');}
+        if(!variant.endsWith('failure')) {if(h.remainingEffortMinutes===undefined)assert.equal(leaseTimers.length,0,'Unbounded recovery invents no timeout');else assert.ok(leaseTimers.at(-1)<=720000&&leaseTimers.at(-1)>719000,'Replacement uses its declared remaining cumulative execution');assert.equal(owned().loadout.thinking,scout?'medium':'high');}
         assert.deepEqual(ledger().assignment,binding);assert.deepEqual(ledger().handoff,h);
         await assert.rejects(rawCall('subagent_message',{name:'original',message:'Blind replay',
           ...(developer?{approvalRef:authority.approvalRef,packetRef:authority.packetRef}:scout?{discoveryAuthorityRef:scoutAuthority.discoveryAuthorityRef}:{})}),/Consumed/);
@@ -211,7 +267,7 @@ esac
           models.length=0;
           const resumed=await reloaded.extensions[0].tools.get('subagent_message').definition.execute('id',{name:'replacement',message:'Only remaining approved work',
             ...(scout?{discoveryAuthorityRef:scoutAuthority.discoveryAuthorityRef}:{approvalRef:authority.approvalRef,packetRef:authority.packetRef})},undefined,undefined,ctx);
-          assert.equal(resumed.details.status,'started');assert.equal(leaseTimers.at(-1),720000,'Saved replay preserves remaining lease ceiling');
+          assert.equal(resumed.details.status,'started');if(h.remainingEffortMinutes===undefined)assert.equal(leaseTimers.length,0,'Unbounded saved resume has no cutoff');else assert.ok(leaseTimers.at(-1)<720000,'Saved replay subtracts previously consumed execution');
           assert.deepEqual(owned().loadout,pinned);assert.deepEqual(owned().workflow,refs);assert.equal(owned().assignmentRoot,binding.id);
           assert.equal(entries.filter(e=>e.customType==='delivery-tmux-lineage-v1').length,lineageCount);
           await reloaded.extensions[0].tools.get('subagent_message').definition.execute('id',{name:'replacement',action:'stop'},undefined,undefined,ctx);

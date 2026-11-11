@@ -49,9 +49,6 @@ export function command(
     "--no-extensions",
     "-e", "builtin:codemode",
     "--no-mcp",
-    "--no-skills",
-    "--no-prompt-templates",
-    "--no-themes",
     "--offline",
     "--tools", tools[role],
     "--append-system-prompt", roleText,
@@ -131,9 +128,9 @@ function signalGroup(pid: number, signal: NodeJS.Signals): void {
 
 export async function run(options: Options): Promise<number> {
   const { role } = options;
-  const timeout = options.timeout ?? 1800;
+  const timeout = options.timeout;
   if (!Object.hasOwn(tools, role)) throw new Error("Unknown role");
-  if (!Number.isFinite(timeout) || timeout <= 0 || timeout > 2_000_000) {
+  if (timeout !== undefined && (!Number.isFinite(timeout) || timeout <= 0 || timeout > 2_000_000)) {
     throw new Error("Timeout must be between 0 and 2,000,000 seconds");
   }
   if (process.platform === "win32") {
@@ -158,7 +155,7 @@ export async function run(options: Options): Promise<number> {
     role,
     project,
     packet_source: packet,
-    timeout_seconds: timeout,
+    timeout_seconds: timeout ?? null,
     command: argv,
     task_accepted: false,
   };
@@ -250,7 +247,7 @@ export async function run(options: Options): Promise<number> {
     const interrupt = () => cancel("interrupted");
     process.on("SIGINT", interrupt);
     process.on("SIGTERM", interrupt);
-    const timer = setTimeout(() => cancel("timed_out"), timeout * 1000);
+    const timer = timeout === undefined ? undefined : setTimeout(() => cancel("timed_out"), timeout * 1000);
     const ticks = setInterval(() => notify(), 1000);
     options.signal?.addEventListener("abort", interrupt, { once: true });
 
@@ -316,7 +313,7 @@ async function main(): Promise<number> {
       project: { type: "string" },
       packet: { type: "string" },
       output: { type: "string" },
-      timeout: { type: "string", default: "1800" },
+      timeout: { type: "string" },
     },
   });
   const role = positionals[0];
@@ -342,7 +339,7 @@ async function main(): Promise<number> {
     project: values.project,
     packet: values.packet,
     output: values.output,
-    timeout: Number(values.timeout),
+    timeout: values.timeout === undefined ? undefined : Number(values.timeout),
   });
 }
 

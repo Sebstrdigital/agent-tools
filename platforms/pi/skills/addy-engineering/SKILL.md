@@ -1,0 +1,132 @@
+---
+name: addy-engineering
+description: Guide substantial engineering through DEFINE, PLAN, BUILD, VERIFY, REVIEW, SHIP; use when the user says PACE/pace ("let's use pace", "continue with pace") for their engineering workflow, asks for a six-phase/six-step cycle, or an understood brainstorming direction needs a proportionate plan.
+license: MIT upstream references; see ../../vendor/addy-agent-skills/LICENSE
+---
+
+# Addy engineering for Pi
+
+One engineering path, not six agents or a second scheduler. Use when the user explicitly asks for this cycle or when a substantial brainstorming conversation reaches an understood actionable direction. Loading the skill, proposing a phase, or discussing a plan is not implementation, private-data or release authority. A clear request to execute an understood task authorizes ordinary reversible implementation, supporting-file changes, diagnosis, repair and reconciled continuation. Advice or a proposal alone does not.
+
+Pi may advertise this skill through an installed directory symlink. Resolve the physical skill directory first (for example, `realpath <advertised-skill-directory>`); resolve all relative file links below from that physical directory, not the user-agent alias. Internal `references/` files also work through the alias, but `../../vendor/` and `../../docs/` require the physical toolkit path. This is source-path resolution, not permission to load another checkout or executable integration.
+
+Read [Pi adaptations](references/pi-adaptations.md) before upstream material. This skill and those adaptations are the active workflow; the pinned sources are supporting engineering references, not a second instruction path. Keep old entry points available, but do not invoke conflicting old workflow skills/commands for the same task. Higher-priority instructions, actual user authority and project rules remain binding. Resolve a consequential conflict instead of claiming this Markdown overrides system policy.
+
+Use proportionate Direct, Developer or Team mechanics already available. Direct remains valid for a small task. Once delegation is selected, the lead coordinates/scopes, reads evidence, inspects diffs/logs/screenshots/release metadata, maintains coordination notes and accepts; workers execute edits, diagnosis/repair, validation, environment lifecycle and authorized Git/release actions. The lead may use shell/API only for read-only evidence inspection, not to execute tests or other validation. No quick-fix or one-line exception applies. A red check requires worker ownership/resource reconciliation followed by continue, redirect or replacement—not silent lead takeover; switching to Direct is explicit and only after reconciliation, never a red-check workaround. No mode-selection ritual or separate Agreement for settled execution authority. When delegating, read [execution mapping](references/execution.md); use existing fixed-role tools over the extracted service. No nesting, silent fallback or automatic cross-model offers.
+
+## PACE — pick up the engineering cycle
+
+**PACE** (case-insensitive) is the conversational alias for this same workflow,
+not another skill, slash command, scheduler or release action. Requests such as
+"let's use pace", "PACE on the approved plan", or "continue with pace" select it;
+ordinary mentions of execution speed or the word "pace" do not.
+
+Read the current task context, latest outcome/handoff, project rules and source
+state; identify the next unfinished phase and continue there. Do not repeat settled
+DEFINE/PLAN work. An approved PLAN normally enters BUILD; completed implementation
+enters VERIFY, verified work enters REVIEW, and accepted reviewed work enters
+SHIP for handoff. Resolve required checks and task-blocking review findings before advancing; record separable suggestions and release risks without silently expanding the task.
+If the task is already complete, report its outcome and gaps rather than inventing
+a new task. PACE does not authorize inventing a task or override a hold, explicit
+limit, conflicting higher-priority rule, or unresolved consequential decision.
+
+A clear PACE continuation request for an understood approved task authorizes
+ordinary reversible implementation, verification and in-scope repairs under the
+existing boundaries. Bare workflow selection without an understood task does not.
+PACE does not grant commit, installation, reload, deletion, publication or release
+permission. Keep the phase guidance and proportionate review gates below.
+
+When the optional `ask_user` tool is available, prefer its keyboard picker for a
+genuine unresolved consequential decision or missing permission. Show the exact
+scope and exclusions; offer clear proceed/hold choices and custom text when useful.
+Do not ask again for settled authority or add prompts between every phase. Cancel,
+timeout, skipped entries, invalid results and tool errors are not approval; interpret
+freeform answers rather than treating them as Yes. Never batch an unresolved
+permission question with dependent mutation calls. If the tool is unavailable,
+ask in ordinary text; PACE does not require the picker or grant installation/reload.
+
+## DEFINE — understand the outcome
+
+For open brainstorming, stay in DEFINE: explore the problem, options, constraints and desired outcome without manufacturing a phase ceremony or implementation commitment. Once the direction is understood, say so and suggest the smallest proportionate next step—usually a short PLAN, or Direct BUILD for a small settled change. If the user explicitly requests this cycle, enter the phase that fits the settled context immediately rather than restarting DEFINE; after bug diagnosis and candidate fixes, that is usually PLAN. Before opening a fresh opt-in session, inspect selected project/parent/global instructions and required tools together; use the optional [project-aware entry aid](../../docs/addy-engineering.md#project-aware-entry-aid) when useful. Resolve known workflow/tool conflicts with applicable authority, preserving quality/safety rules—not by suppressing context, pretending unavailable tools exist or claiming a skill overrides higher-priority instructions. A mechanical preflight is not semantic compatibility; the session must verify its full effective loadout before implementation.
+
+Inspect current source, relevant project rules, dirty work, existing task context and valid baseline evidence. For continuation or follow-up, read the latest outcome/handoff and inspect current source state before proposing more work. Distinguish historical pending checks from subsequent acceptance. Identify what already changed, actual versus reused evidence and remaining gaps; do not ask for instrumentation/checks already completed or turn an unperformed measurement into a pass. Reuse an existing issue, conversation, specification or JSON; no prescribed filenames or document suite. Do not overwrite another task's incomplete plan.
+
+Observe a fresh task baseline independently of workflow compatibility: current revision/dirty ownership and the project-required valid pre-edit checks. Do not compare a new task to a hardcoded old release/status snapshot or reset newer work to satisfy a previous task's preflight. An entry aid's Git observation is not a green product-test baseline.
+
+Preserve Addy's specification content, proportional to the task:
+- **Objective:** who needs what, why, specific acceptance and explicit non-goals.
+- **Commands:** exact project build/test/lint/runtime commands with flags and prerequisites; discover rather than assume npm or browser tooling.
+- **Structure:** relevant source, tests, interfaces and dependencies.
+- **Style:** existing conventions and a representative example where useful.
+- **Testing:** affected behavior, focused regression, integrated checks, realistic runtime/manual scenarios.
+- **Boundaries:** always do, ask first, never do; ownership, private-data, live effects and release exclusions.
+
+For independently testable capabilities, identify boundaries and dependency direction before slicing; use a concise capability map when useful, not mandatory per-module specs. Surface consequential assumptions; ask only when evidence cannot settle a product, scope, security, permission or ownership decision. A known outcome and clear execution request do not need another approval turn.
+
+Basis: [spec-driven development](../../vendor/addy-agent-skills/skills/spec-driven-development/SKILL.md).
+
+## PLAN — choose the smallest useful route
+
+Map dependencies and risks from the actual code. Identify foreseeable important special cases and failure paths proportionately, distinguishing agreed acceptance criteria from known limitations and follow-ups. Consider cheaper alternatives. Prefer thin vertical slices; use risk-first proof or contract-first slicing when uncertainty or independent consumers justify it. Each slice states behavior, acceptance and useful verification. File lists are pointers unless explicitly restricted; necessary supporting files do not automatically expand the outcome.
+
+Assess whether parallel work actually saves time after isolation, integration and review costs. For beneficial parallelism, use the [parallel planning and attempt workbook guide](references/parallel-work.md); for a simple task, keep the ordinary lightweight path. This is guidance, not an automated scheduler or an assurance that the current service supports every parallel pattern.
+
+Choose artifact locations early: identify the owning project root, one project-local task workspace, retained-output locations and cleanup responsibility. Follow [project-local artifacts and housekeeping](../../docs/workflows/project-artifacts.md); carry those paths and any approved external exceptions into worker packets. Dirty work requires safe isolation, not external scratch by default.
+
+Plan the [manual acceptance handoff](../../docs/workflows/validated-completion.md#manual-acceptance-handoff) from project `AGENTS.md` and settled task context; ask only about consequential gaps. Keep trivial work proportionate.
+
+Use the [early delivery preflight](../delivery/SKILL.md#early-delivery-preflight) to trace acceptance, settled authority, worker capability, release route and side effects end to end, proportionate to the task. Choose the simplest sufficient safe validation without dropping required checks or inventing infrastructure.
+
+Choose the validation route early. Inspect whether normal startup can access installed/private assets, download models, migrate data, prompt for permissions, claim devices or change a running application; isolated config/HOME alone does not exclude these effects. Summarize the understood task authority, acceptance/checks and exclusions concisely in existing context. Ask concrete permission questions for necessary unresolved effects; group known independent consequential decisions when useful, and ask dependent decisions later. Do not invent blanket approval or repeat settled grants. Offer an authorized narrow read-only prerequisite check instead of asking the user to certify unknown cache/migration conditions from memory. Other authorized fake-backed implementation may continue while a distinct runtime gate waits.
+
+Before marking any milestone complete, validate its acceptance condition and inspect evidence for the actual candidate/environment; this applies to setup and review-environment milestones too, not only final VERIFY. Follow [validated milestone completion](../../docs/workflows/validated-completion.md): use the normal user path without diagnostic bypasses; failed or blocked validation leaves the milestone unfinished with a reason. Verify within every slice, then on the integrated candidate. Keep a short ordered checklist or existing tracker as the single work record; no fixed slice size, time pool, repair-count cap, recurring human checkpoint or compulsory role cycle. Parallel workers require independent linked worktrees with the intended candidate; serialize shared/dependent changes. Park unrelated cleanup and optimization.
+
+Basis: [planning and task breakdown](../../vendor/addy-agent-skills/skills/planning-and-task-breakdown/SKILL.md), [incremental implementation](../../vendor/addy-agent-skills/skills/incremental-implementation/SKILL.md).
+
+## BUILD — autonomous, tested slices
+
+Discover the repository's test stack before coding. For behavior changes use **RED → GREEN → REFACTOR**: write a focused failing test, confirm it fails for the intended missing behavior, implement the minimum useful fix, then improve task-owned structure with tests green. For bug fixes, reproduce before fixing; preserve repro conditions and a regression test that fails without the fix. Static documents/configuration need appropriate structural checks, not fabricated behavioral RED evidence.
+
+Keep each slice working and run its affected checks before moving on. Prefer real implementations; fake only unsafe, slow or nondeterministic boundaries. Preserve unrelated dirty work; do not require a clean checkout, stash or automatic commits. For Direct, continue ordinary diagnosis and repair under existing task authority. For delegated work, workers perform that diagnosis/repair after ownership/resource reconciliation; the lead does not silently take it over.
+
+When implementation reveals a new case, distinguish a defect in the agreed outcome from a pre-existing or separable risk. Finish the agreed outcome and record separable findings for follow-up rather than silently adding requirements. If safety or acceptance is blocked, surface the blocker and do not claim completion. For a consequential decision, briefly explain the finding, its effect on the original task, and viable bounded and broader choices; clearly label any choice that adds requirements or acceptance criteria **Scope expansion**, with its material implications. Recommend the bounded route when it can safely meet the agreed outcome; if recommending expansion, explain why the bounded route is inadequate and what additional work it entails. Reconsider a prior recommendation when new evidence changes its cost or scope. Do not ask about routine in-scope repairs or impose a new phase gate.
+
+When a check fails, stop adding unrelated functionality, retain the failure evidence and safely reconcile partial side effects and resource ownership before retrying; do not blindly replay actions. Continue authorized in-scope repair and acceptance verification rather than prematurely handing off a failed outcome. Reproduce → localize → reduce → identify the **root cause** → fix → guard against recurrence → verify the original scenario. Compiler/test/harness corrections are implementation, not repair tokens. Do not disable checks merely to get green. If a required check is wrong, diagnose it; changing the required quality bar needs applicable authority. When progress stalls, change strategy; ask for consequential new decisions, demonstrated no progress or exhausted explicit user-agreed limits, not routine red checks.
+
+Basis: [TDD](../../vendor/addy-agent-skills/skills/test-driven-development/SKILL.md), [debugging and error recovery](../../vendor/addy-agent-skills/skills/debugging-and-error-recovery/SKILL.md).
+
+## VERIFY — project-owned evidence
+
+Project rules own quality standards, commands, environments and release procedures. Apply task acceptance and the project's standing Definition of Done; upstream examples help fill reasoning gaps, not invent native-app web metrics or universal npm commands.
+
+Validate focused changes and required integrated checks on the integrated candidate. Include realistic runtime/manual verification for the changed user path and its failures when authorized. Isolate live-side-effect tests before execution and verify the effective boundary; invoking shell or changing HOME alone is not proof of product isolation. Do not stop the application under development or interfere with unrelated applications. Use approved browser/MCP integrations only; no private-data access from screenshots, profiles, cookies or tokens without authority.
+
+Verify against the agreed task, not future sprint or product features. Report separable discoveries, serious release risks and coverage gaps without turning suggestions into new acceptance criteria.
+
+Record exact candidate identity, commands, environment, result counts and full-log pointers. Reuse evidence only for unchanged candidate/conditions; renew affected evidence and required integrated checks after edits, not assurance-only full reruns. Missing or excluded checks are not passes. Keep an explicit manual checklist and honest gaps; fixture success does not prove live providers or installed behavior.
+
+Basis: [Definition of Done](../../vendor/addy-agent-skills/references/definition-of-done.md), [testing patterns](../../vendor/addy-agent-skills/references/testing-patterns.md).
+
+## REVIEW — complete integrated task, not isolated slices
+
+Inspect the complete task-owned diff including added files, intent, project rules, outcome and validation evidence on the exact candidate. Review correctness, readability/simplicity, architecture, security and performance. Include compatibility, failure paths and whether tests genuinely guard the new behavior. Lead inspection is not independent review.
+
+For Team, final independent integrated review is the default gate before acceptance. Prior independent review of the exact candidate can satisfy it; a new worker per slice is not required. Direct/Developer use independent review proportionate to risk and requested gates; honor any explicitly requested independent gate. If independent review cannot run, report the missing gate rather than relabel self-review or fabricated sequential personas as independent.
+
+Keep the reviewer inspection-only and the no-edit validator boundary intact. A reviewer can propose mutation cases but cannot edit or run shell experiments; an authorized builder executes them in an isolated disposable fixture (or the lead only in Direct). Worker completion is not acceptance. Classify findings against the agreed task, acceptance and safety: distinguish task blockers and release risks from separable follow-up suggestions, including pre-existing issues. Do not promote future sprint tasks or suggestions into requirements. Surface serious risks honestly; a release risk may be documented separately when the task itself can safely be completed. Fix blockers in scope, renew affected evidence and obtain renewed review of affected changes; unchanged review/evidence can be reused. Reassess the integrated candidate after repairs, not only the last patch.
+
+The lead alone accepts against the outcome and requested gates. Green tests/review are not release permission.
+
+Basis: [code review and quality](../../vendor/addy-agent-skills/skills/code-review-and-quality/SKILL.md).
+
+## SHIP — handoff first, release only with authority
+
+Return the exact candidate, useful outcome, actual and reused checks, review disposition, consolidated manual checklist and remaining risks/gaps. For an agreed manual acceptance handoff, provide the verified review path and keep the approved environment available for the user under its agreed lifecycle. Continue authorized work rather than stopping at a checkpoint. If stopping, explain why and recommend one concrete next action and any unresolved permission; keep lengthy details behind evidence pointers. Preserve enough concise task context to resume: purpose, settled decisions/authority, exclusions, candidate identity, next action and evidence pointers. Conversation or existing issue/JSON is sufficient; use Munin when available and omit secrets. Before later advice or follow-up, read this current outcome and renew only affected/required evidence, not assurance-only checks or duplicate implementation.
+
+Before completion, inspect housekeeping: preserve useful final evidence, repair evidence links, reconcile task-owned scratch/worktrees/resources and report retained purposes or blocked cleanup. Apply the project-local artifact policy and any existing scoped cleanup authority; do not sweep historical or unrelated files.
+
+No automatic commit, merge, installation/reload, deploy, publication, revert, artifact deletion or worktree cleanup. Prepare applicable release/rollback procedures without executing them. Execute outward/destructive actions only under applicable explicit authority and project procedures. Acceptance of code does not authorize release or retirement of the old workflow.
+
+For staged workflow migration: isolated opt-in candidate → separately approved activation after a fresh baseline/ongoing-worker check → useful bounded real tasks → adjust from evidence → default/old-policy retirement only when separately justified and approved. Do not contact or control unrelated agent work to satisfy a stage. Specialist skills remain on demand; use the [catalog and override table](references/pi-adaptations.md), not blanket loading.
+
+Basis: [shipping and launch](../../vendor/addy-agent-skills/skills/shipping-and-launch/SKILL.md).

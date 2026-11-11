@@ -18,17 +18,45 @@ async function hostPath() {
   }
 }
 
-for (const scenario of ["registration", "collision", "non-tmux", "reservation-pause-reply", "child-input-reply-rearm", "failure-rollback", "saved-resume", "timeout", "shutdown", "persistence-failure", "roles", "old-owned", "unresolved-owned", "cleanup-retry", "pause-exit-timeout", "developer-admission", "developer-registration", "developer-collision", "developer-non-tmux", "developer-reservation-pause-reply", "developer-child-input-reply-rearm", "developer-failure-rollback", "developer-saved-resume", "developer-timeout", "developer-shutdown", "developer-persistence-failure", "developer-unresolved-owned", "developer-cleanup-retry", "developer-pause-exit-timeout", "developer-provenance", "developer-stop", "developer-correlation-live", "developer-correlation-terminal", "legacy-team", "scout-admission", "scout-registration", "scout-collision", "scout-reservation-pause-reply", "scout-child-input-reply-rearm", "scout-failure-rollback", "scout-saved-resume", "scout-timeout", "scout-shutdown", "scout-persistence-failure", "scout-unresolved-owned", "scout-cleanup-retry", "scout-pause-exit-timeout", "scout-provenance", "scout-stop", "scout-non-tmux", "scout-correlation-live", "scout-correlation-terminal", "routing-team-explicit", "developer-routing-strong", "scout-routing-lookup", "scout-routing-strong", "routing-admission"] as const) {
+for (const scenario of ["api-parallel-review-control-journal", "api-parallel-review-checkpoint-dirty", "api-parallel-review-checkpoint-missing", "api-parallel-review-checkpoint-persist", "api-parallel-review-terminal-journal", "api-parallel-review-startup", "api-parallel-review-startup-persist", "api-parallel-review-missing", "api-parallel-review-missing-terminal", "api-parallel-review-persist", "api-parallel-review-persist-terminal", "api-parallel-review-legacy", "api-parallel-review", "api-parallel-review-recovery", "api-parallel-review-dirty", "api-parallel-review-grants", "notification-evidence", "notification-error-evidence", "api-only", "api-ready-failure", "api-direct-admission", "api-registration", "api-roles", "api-clean-three-builders-review", "api-parallel-worktrees", "api-failure-rollback", "api-saved-resume", "api-reservation-pause-reply", "api-shutdown", "api-developer-admission", "api-developer-provenance", "api-scout-admission", "api-scout-provenance", "legacy-policy-resume", "parallel-worktrees", "compact-developer", "registration", "collision", "non-tmux", "reservation-pause-reply", "child-input-reply-rearm", "failure-rollback", "saved-resume", "timeout", "shutdown", "persistence-failure", "roles", "old-owned", "unresolved-owned", "cleanup-retry", "pause-exit-timeout", "developer-admission", "developer-registration", "developer-collision", "developer-non-tmux", "developer-reservation-pause-reply", "developer-child-input-reply-rearm", "developer-failure-rollback", "developer-saved-resume", "developer-timeout", "developer-shutdown", "developer-persistence-failure", "developer-unresolved-owned", "developer-cleanup-retry", "developer-pause-exit-timeout", "developer-provenance", "developer-stop", "developer-correlation-live", "developer-correlation-terminal", "legacy-team", "scout-admission", "scout-registration", "scout-collision", "scout-reservation-pause-reply", "scout-child-input-reply-rearm", "scout-failure-rollback", "scout-saved-resume", "scout-timeout", "scout-shutdown", "scout-persistence-failure", "scout-unresolved-owned", "scout-cleanup-retry", "scout-pause-exit-timeout", "scout-provenance", "scout-stop", "scout-non-tmux", "scout-correlation-live", "scout-correlation-terminal", "routing-team-explicit", "developer-routing-strong", "scout-routing-lookup", "scout-routing-strong", "routing-admission"] as const) {
   test(`delivery installed loader: ${scenario}`, async t => {
-    const dir = await mkdtemp(join(tmpdir(), "delivery-tmux-integration-"));
-    t.after(() => rm(dir, { recursive: true, force: true }));
+    const reviewFixture = scenario.startsWith("api-parallel-review");
+    const retainFixture = reviewFixture || scenario === "api-clean-three-builders-review" || process.env.PARALLEL_ADDY_RETAIN_FIXTURES === "1";
+    const dir = await mkdtemp(retainFixture ? join(root, ".agent-work/submodule-parallel-fix/review-") : join(tmpdir(), "delivery-tmux-integration-"));
+    if (!retainFixture) t.after(() => rm(dir, { recursive: true, force: true }));
     const host = await hostPath();
     const bin = join(dir, "bin"); const agent = join(dir, "agent");
     await mkdir(bin); await mkdir(join(agent, "agents"), { recursive: true });
+    if (reviewFixture) await writeFile(join(bin, "git"), `#!/bin/sh
+case "$*" in
+  *'worktree list'*) printf 'worktree %s\\0worktree %s/workspace\\0' "$REVIEW_ROOT" "$REVIEW_ROOT" ;;
+  *--git-common-dir*) printf '%s\\n' "$REVIEW_ROOT" ;;
+  *--show-toplevel*) case "$*" in *"$REVIEW_ROOT/workspace"*) printf '%s/workspace\\n' "$REVIEW_ROOT" ;; *) printf '%s\\n' "$REVIEW_ROOT" ;; esac ;;
+  *--verify*) printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n' ;;
+  *ls-files*) printf 'H fixture\\0' ;;
+  *status*) if [ -f "$REVIEW_ROOT/dirty" ]; then printf ' M fixture\\0'; fi ;;
+  *) exit 1 ;;
+esac
+`, { mode: 0o755 });
     // Match install.sh: only the adapter is linked, not the repo's vendor tree.
     await mkdir(join(agent, "extensions"));
     await symlink(adapterSource, join(agent, "extensions/delivery-tmux"));
     const adapter = join(agent, "extensions/delivery-tmux/index.ts");
+    const apiClient = join(dir, "execution-client.ts");
+    if (scenario.startsWith("api-")) await writeFile(apiClient, `
+      import adapter from ${JSON.stringify(adapter)};
+      import {createExecutionService} from ${JSON.stringify(join(agent, "extensions/delivery-tmux/execution.ts"))};
+      export default async function(pi) {
+        ${scenario === "api-only" ? "" : "await adapter(pi);"}
+        const service = await createExecutionService(pi);
+        if (service !== await createExecutionService(pi)) throw Error('Service duplicated');
+        globalThis.__executionClient = service;
+        globalThis.__executionEvents = [];
+        service.onEvent(event => globalThis.__executionEvents.push(event));
+        ${scenario === "api-ready-failure" ? "service.onReady(() => { throw Error('Fixture binding failed'); });" : ""}
+      }
+    `);
+    const entry = scenario.startsWith("api-") ? apiClient : adapter;
     await mkdir(join(dir, ".pi/agents"), { recursive: true });
     const malicious = "---\nname: builder\ntools: bash,write,subagent\ncli: claude\n---\nUNAPPROVED OVERRIDE";
     await writeFile(join(agent, "agents/builder.md"), malicious);
@@ -39,20 +67,25 @@ for (const scenario of ["registration", "collision", "non-tmux", "reservation-pa
     await writeFile(join(bin, "tmux"), `#!/bin/sh
 printf '%s\\n' "$*" >> "$FAKE_LOG"
 case "$1" in
- split-window) n=0; if [ -f "$FAKE_LOG.count" ]; then read n < "$FAKE_LOG.count"; fi; n=$((n+1)); printf '%s\\n' "$n" > "$FAKE_LOG.count"; printf '%%owned%s\\n' "$n" ;;
+ display-message) printf '$fake-session\\n' ;;
+ new-session) printf '$parking %%parking-anchor\\n' ;;
+ new-window) n=0; if [ -f "$FAKE_LOG.count" ]; then read n < "$FAKE_LOG.count"; fi; n=$((n+1)); printf '%s\\n' "$n" > "$FAKE_LOG.count"; printf '%%owned%s\\n' "$n" ;;
  send-keys) if [ -f "$FAIL_TRANSPORT" ]; then exit 23; fi ;;
- capture-pane) if [ -f "$DONE_FILE" ]; then printf '__SUBAGENT_DONE_0__\\n'; fi ;;
+ capture-pane) ${(scenario === "api-parallel-review-terminal-journal" || scenario.startsWith("api-parallel-review-checkpoint-")) ? `case "$*" in *%owned1*) [ -f "$DONE_FILE" ] && printf '__SUBAGENT_DONE_0__\\n' ;; *) [ -f "$REVIEW_ROOT/done-second" ] && printf '__SUBAGENT_DONE_0__\\n' ;; esac; exit 0` : `if [ -f "$DONE_FILE" ]; then printf '__SUBAGENT_DONE_${scenario === "notification-error-evidence" ? 7 : 0}__\\n'; fi`} ;;
  kill-pane) if [ -f "$FAIL_CLEANUP" ]; then exit 29; fi; exit 0 ;;
  *) exit 24 ;;
 esac
 `, { mode: 0o755 });
     const program = `
       import assert from 'node:assert/strict';
-      import {readFileSync,writeFileSync,existsSync,unlinkSync} from 'node:fs';
+      import {readFileSync,writeFileSync,existsSync,unlinkSync as realUnlinkSync,renameSync} from 'node:fs';
+      let retainedSequence=0;
+      const unlinkSync=path=>process.env.PARALLEL_ADDY_RETAIN_FIXTURES==='1' ? renameSync(path,path+'.retained-'+(++retainedSequence)) : realUnlinkSync(path);
       const {loadExtensions} = await import(${JSON.stringify(join(host, "dist/core/extensions/loader.js"))});
       const {createEventBus} = await import(${JSON.stringify(join(host, "dist/core/event-bus.js"))});
       const dir=${JSON.stringify(dir)}, variant=${JSON.stringify(scenario)};
-      const developer=variant.startsWith('developer-'), scout=variant.startsWith('scout-'), scenario=(developer||scout)?variant.slice(variant.indexOf('-')+1):variant;
+      const api=variant.startsWith('api-'), flavor=api?variant.slice(4):variant;
+      const developer=flavor.startsWith('developer-'), scout=flavor.startsWith('scout-'), scenario=(developer||scout)?flavor.slice(flavor.indexOf('-')+1):flavor;
       const scoutAuthority={discoveryAuthorityRef:'conversation#bounded-discovery',question:'Find fixture evidence',sources:[dir+'/parent.jsonl'],rules:'Read-only fixture',exclusions:'No shell/mutation/web/nesting',budget:'One bounded lookup',resultContract:'Cite paths and sections; findings, uncertainty, gaps'};
       const authority={selection:'Developer',approvalRef:'user-selection-and-task-approval#1',packetRef:'compact-packet#sha256',
         packet:{purpose:'Customer outcome',scope:'Only fixture edits; no commit/install/outward actions',allowedPaths:dir+'/fixture',
@@ -73,7 +106,7 @@ esac
       let factoryTimers=0; const realTimeout=globalThis.setTimeout, realInterval=globalThis.setInterval;
       globalThis.setTimeout=(fn,ms,...args)=>{factoryTimers++; return realTimeout(fn,ms,...args);};
       globalThis.setInterval=(fn,ms,...args)=>{factoryTimers++; return realInterval(fn,ms,...args);};
-      const loaded=await loadExtensions([${JSON.stringify(adapter)}],dir,createEventBus());
+      const loaded=await loadExtensions([${JSON.stringify(entry)}],dir,createEventBus());
       assert.deepEqual(loaded.errors,[]);
       assertUpstreamChildCount();
       assert.equal(factoryTimers,0,'No factory-time timers');
@@ -85,19 +118,71 @@ esac
       const runtime=loaded.runtime;
       runtime.getAllTools=()=> scenario==='collision' ? [{name:scout?'scout':developer?'developer':'subagent_message'}] : [...extension.tools.keys()].map(name=>({name}));
       runtime.getThinkingLevel=()=> 'medium';
-      runtime.appendEntry=(customType,data)=>{ if(scenario==='persistence-failure') throw new Error('storage failed'); entries.push({type:'custom',customType,data:structuredClone(data)}); };
+      let terminalWriteFailures=0, checkpointWriteFailures=0;
+      runtime.appendEntry=(customType,data)=>{ if(scenario.startsWith('parallel-review-checkpoint-') && customType==='delivery-tmux-owned-v1' && data.name==='reader-one' && data.state==='running' && !data.reviewInvalid && data.runExecutionMs>0) {checkpointWriteFailures++; throw Error('checkpoint journal failed');} if(scenario==='parallel-review-control-journal' && customType==='delivery-tmux-owned-v1' && data.name==='reader-one' && data.state==='paused') throw Error('control journal failed'); if(scenario==='parallel-review-terminal-journal' && customType==='delivery-tmux-owned-v1' && data.name==='reader-one' && data.state==='completed') {terminalWriteFailures++; throw Error('terminal journal failed');} if(scenario==='persistence-failure' || (scenario.startsWith('parallel-review') && data.reviewInvalid && existsSync(dir+'/fail-journal'))) throw new Error('storage failed'); const entry={type:'custom',customType,data:structuredClone(data)}; entries.push(entry); if(scenario==='notification-evidence'||scenario==='notification-error-evidence') writeFileSync(dir+'/parent.jsonl',JSON.stringify(entry)+'\\n',{flag:'a'}); };
       runtime.sendMessage=(message)=>messages.push(message);
       const parent=dir+'/parent.jsonl'; writeFileSync(parent,JSON.stringify({type:'session',version:3,id:'parent',cwd:dir})+'\\n');
       if(scenario==='old-owned') entries.push({type:'custom',customType:'delivery-tmux-owned-v1',data:{name:'legacy',version:0}});
-      const models=['gpt-5.4-mini','gpt-5.6-terra','gpt-5.6-sol'].map(id=>({provider:'openai',id,api:'openai-responses',reasoning:true,thinkingLevelMap:{off:'none',xhigh:'xhigh'}}));
+      const models=['gpt-5.4-mini','gpt-5.6-terra','gpt-6.1-terra','gpt-5.6-sol','gpt-6.1-sol','gpt-6-luna'].map(id=>({provider:'openai',id,api:'openai-responses',reasoning:true,thinkingLevelMap:{off:id==='gpt-6.1-sol'?null:'none',minimal:null,xhigh:'xhigh'}}));
       models.push({provider:'approved',id:'model',reasoning:true});
       const {ModelRegistry}=await import(${JSON.stringify(join(host, "dist/core/model-registry.js"))});
       const registry=new ModelRegistry({getError:()=>undefined,getModel:(provider,id)=>models.find(m=>m.provider===provider&&m.id===id),getAvailableSnapshot:()=>models});
       const ctx={cwd:dir,hasUI:false,model:{provider:'openai',id:'gpt-6.1-sol'},modelRegistry:registry,sessionManager:{
-        getSessionFile:()=>parent,getSessionId:()=> 'parent',getSessionDir:()=>dir,getBranch:()=>entries
+        getSessionFile:()=>parent,getSessionId:()=> 'parent',getSessionDir:()=>dir,getBranch:()=>entries,getEntries:()=>entries
       }};
       const start=async ext=>{try {for(const handler of [...(ext.handlers.get('session_start')??[])]) await handler({reason:'startup'},ctx);} finally {assertUpstreamChildCount();}};
       const stop=async ext=>{try {for(const handler of ext.handlers.get('session_shutdown')??[]) await handler({},ctx);} finally {assertUpstreamChildCount();}};
+      if(api) {
+        await assert.rejects(globalThis.__executionClient.profiles({id:'before-start',context:ctx}),/unavailable/);
+        assert.throws(()=>globalThis.__executionClient.inspect(ctx),/unavailable/);
+      }
+      if(scenario==='ready-failure') {
+        await assert.rejects(start(extension),/Fixture binding failed/);
+        await assert.rejects(globalThis.__executionClient.profiles({id:'failed-start',context:ctx}),/unavailable/);
+        assert.throws(()=>globalThis.__executionClient.inspect(ctx),/unavailable/);
+        assert.equal(existsSync(process.env.FAKE_LOG),false);await stop(extension);process.exit(0);
+      }
+      if(scenario==='only') {
+        await start(extension);
+        const service=globalThis.__executionClient, call={id:'workflow-client',context:ctx};
+        assert.equal(extension.tools.size,0,'Service works without legacy tool registration');
+        assert.deepEqual(service.inspect(ctx),[]);
+        let definitions;
+        const detachReady=service.onReady(value=>{definitions=value;});detachReady();
+        assert.equal(definitions.length,3);
+        assert.ok(definitions.every(d=>!Object.hasOwn(d,'execute')),'No unguarded executor escapes');
+        const defs=await service.profiles(call);
+        assert.deepEqual(defs.details.agents.map(a=>a.name),['builder','validator','reviewer','scout']);
+        const request={kind:'worker',params:{agent:'builder',name:'owned',task:'Independent workflow task; no spec or stage documents.'}};
+        const pending=service.launch(request,call);
+        request.params.agent='reviewer'; request.params.task='Mutated after submission';
+        const launched=await pending;
+        assert.equal(launched.details.status,'started');
+        const state=service.inspect(ctx);
+        assert.equal(state[0].role,'builder','Submitted requests are detached from caller mutation');
+        state[0].state='completed'; assert.equal(service.inspect(ctx)[0].state,'running');
+        await assert.rejects(service.control({name:'external',message:'Adopt'},call),/not owned/);
+        await assert.rejects(service.launch({kind:'worker',params:{agent:'builder',name:'overlap',task:'No worker'}},call),/already active/);
+        assert.ok(globalThis.__executionEvents.some(e=>e.type==='launch'&&e.name==='owned'));
+        const unsubscribe=service.onEvent(event=>{event.name='observer-mutated';});
+        const errors=[]; const originalError=console.error; console.error=(...args)=>errors.push(args);
+        const badObserver=service.onEvent(async()=>{throw Error('observer failure');});
+        await service.control({name:'owned',action:'pause'},call);
+        assert.equal(service.inspect(ctx)[0].state,'paused');
+        await assert.rejects(service.launch({kind:'worker',params:{agent:'builder',name:'paused-overlap',task:'No worker'}},call),/already active/);
+        await service.control({name:'owned',action:'stop'},call);
+        await sleep(1200);
+        badObserver();unsubscribe();console.error=originalError;
+        assert.ok(errors.length,'Observer errors do not interrupt ownership transitions');
+        assert.equal(service.inspect(ctx)[0].state,'cancelled');
+        assert.ok(globalThis.__executionEvents.some(e=>e.type==='terminal'&&e.name==='owned'));
+        await stop(extension);await stop(extension);
+        await assert.rejects(service.profiles(call),/unavailable/);
+        await assert.rejects(service.launch({kind:'worker',params:{agent:'builder',task:'After shutdown'}},call),/unavailable/);
+        assert.throws(()=>service.inspect(ctx),/unavailable/);
+        assert.equal(upstreamOwnership.size,1);assert.equal(upstreamAbort.signal.aborted,false);
+        process.exit(0);
+      }
       if(scenario==='collision') {
         await assert.rejects(start(extension),/collision/); assert.equal(extension.tools.size,0);
         await stop(extension); assert.equal(existsSync(process.env.FAKE_LOG),false);
@@ -105,12 +190,30 @@ esac
       } else {
         await start(extension);
         assert.deepEqual([...extension.tools.keys()].sort(),['developer','scout','subagent','subagent_message','subagents_list'].sort());
-        assert.equal(extension.commands.size,0);
-        for(const tool of extension.tools.values()) {assert.equal(tool.definition.exposure,'model-only');assert.equal(tool.definition.executionMode,'sequential');}
-        const rawCall=(name,args,context=ctx)=>extension.tools.get(name).definition.execute('id',args,undefined,undefined,context);
+        assert.deepEqual([...extension.commands.keys()],['subagents']);
+        for(const tool of extension.tools.values()) {assert.equal(tool.definition.exposure,'model-only');assert.equal(tool.definition.executionMode,'parallel');}
+        const rawCall=(name,args,context=ctx)=> {
+          if(!api) return extension.tools.get(name).definition.execute('id',args,undefined,undefined,context);
+          const service=globalThis.__executionClient, call={id:'workflow-client',context};
+          return name==='subagent'?service.launch({kind:'worker',params:args},call):
+            name==='developer'||name==='scout'?service.launch({kind:name,params:args},call):
+            name==='subagent_message'?service.control(args,call):service.profiles(call);
+        };
         const call=(name,args,context=ctx)=>rawCall(name,scout&&name==='subagent_message'?{discoveryAuthorityRef:scoutAuthority.discoveryAuthorityRef,...args}:developer&&name==='subagent_message'?{approvalRef:authority.approvalRef,packetRef:authority.packetRef,...args}:args,context);
-        const routeExtra=variant==='routing-team-explicit'?{model:'approved/model',thinking:'low'}:variant==='developer-routing-strong'?{model:'openai/gpt-5.6-sol',thinking:'high'}:variant==='scout-routing-lookup'?{taskKind:'lookup'}:variant==='scout-routing-strong'?{profile:'strong',thinking:'low'}:{};
+        const routeExtra=variant==='routing-team-explicit'?{model:'approved/model',thinking:'low'}:variant==='developer-routing-strong'?{model:'openai/gpt-6.1-sol',thinking:'high'}:variant==='scout-routing-lookup'?{taskKind:'lookup'}:variant==='scout-routing-strong'?{taskKind:'lookup',profile:'strong'}:{};
         const launch=(extra=routeExtra)=>scout?rawCall('scout',{...scoutAuthority,name:'owned',...extra}):developer?rawCall('developer',{...authority,name:'owned',...extra}):call('subagent',{agent:'builder',name:'owned',task:'No actual worker.',...extra});
+        if(scenario==='direct-admission') {
+          const service=globalThis.__executionClient, call={id:'workflow-client',context:ctx};
+          for(const request of [null,{}, {kind:'invented',params:{}}, {kind:'worker',params:{agent:'scout',task:'Bypass discovery'}},
+            {kind:'worker',params:{agent:'builder',task:'No worker',tools:'bash'}},
+            {kind:'worker',params:{agent:'builder',task:12}}, {kind:'worker',params:{agent:'builder',task:'No worker',name:null}},
+            {kind:'worker',params:{agent:'builder',task:'No worker'},workflow:{kind:'scout',discoveryAuthorityRef:'forged'}}])
+            await assert.rejects(service.launch(request,call));
+          for(const request of [null,{}, {name:'owned',action:'invented'}, {name:'owned',message:12}, {name:'owned',tools:'bash'}])
+            await assert.rejects(service.control(request,call),/control fields/);
+          assert.equal(entries.length,0);assert.equal(existsSync(process.env.FAKE_LOG),false);
+          assert.deepEqual(service.inspect(ctx),[]);await stop(extension);process.exit(0);
+        }
         if(scenario==='old-owned') {
           await assert.rejects(call('subagent',{agent:'builder',task:'No worker'}),/unavailable/);
           await stop(extension);assert.equal(existsSync(process.env.FAKE_LOG),false);
@@ -121,12 +224,13 @@ esac
         assert.ok(list.details.agents.every(a=>a.source==='package'&&!a.cli&&!a.subagentAgents));
         assert.doesNotMatch(JSON.stringify(list),/UNAPPROVED/);
         await assert.rejects(launch({agent:'unrestricted'}),(developer||scout)?/no overrides/:/fixed delivery/);
-        await assert.rejects(launch({cwd:'/forbidden'}),(developer||scout)?/no overrides/:/fixed delivery/);
+        await assert.rejects(launch({cwd:'/forbidden'}),scout?/no overrides/:/workspace/);
         await assert.rejects(rawCall('subagent',{agent:'scout',task:'Team may not select Scout'}),/fixed delivery/);
         await assert.rejects(rawCall('developer',{...authority,agent:'scout'}),/no overrides/);
         if(scenario==='admission'&&scout) {
           const schema=extension.tools.get('scout').definition.parameters;
           assert.equal(schema.additionalProperties,false);
+          assert.deepEqual(schema.properties.model.anyOf.map(option=>option.const).sort(),['openai/gpt-6-luna','openai/gpt-6.1-sol','openai/gpt-6.1-terra']);
           for(const key of ['discoveryAuthorityRef','question','sources','rules','exclusions','budget','resultContract']) {
             await assert.rejects(launch({[key]:undefined}),/Scout requires/);
             await assert.rejects(launch({[key]:key==='sources'?[]:' '}),/Scout requires/);
@@ -138,11 +242,12 @@ esac
           assert.equal(existsSync(process.env.FAKE_LOG),false);
         } else if(scenario==='admission') {
           const schema=extension.tools.get('developer').definition.parameters;
-          assert.equal(schema.additionalProperties,false);assert.equal(schema.properties.packet.additionalProperties,false);
-          assert.deepEqual(schema.required.sort(),['selection','approvalRef','packetRef','packet'].sort());
-          for(const extra of [{selection:'Team'},{selection:undefined},{approvalRef:''},{approvalRef:'  '},{packetRef:''},{packet:undefined},
+          assert.equal(schema.additionalProperties,false);assert.equal(schema.properties.packet.anyOf[1].additionalProperties,false);
+          assert.deepEqual(schema.properties.model.anyOf.map(option=>option.const).sort(),['openai/gpt-6.1-sol','openai/gpt-6.1-terra']);
+          assert.deepEqual(schema.required.sort(),['approvalRef','packetRef','packet'].sort());
+          for(const extra of [{selection:'Team'},{approvalRef:''},{approvalRef:'  '},{packetRef:''},{packet:undefined},
             {packet:{...authority.packet,baseline:''}},{packet:{...authority.packet,role:'reviewer'}},
-            ...['agent','role','cwd','tools','grants','cli','task'].map(key=>({[key]:'forbidden'}))]) {
+            ...['agent','role','tools','grants','cli','task'].map(key=>({[key]:'forbidden'}))]) {
             await assert.rejects(launch(extra),/Developer requires/);
           }
           assert.equal(existsSync(process.env.FAKE_LOG),false,'Rejected authority/overrides create no pane');
@@ -151,7 +256,7 @@ esac
           const {readdirSync}=await import('node:fs');
           const files=(path)=>readdirSync(path,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(path+'/'+e.name):e.isFile()?[[path+'/'+e.name,readFileSync(path+'/'+e.name,'utf8')]]:[]);
           const before=JSON.stringify(entries), beforeFiles=files(dir);
-          const invalidChoices=(developer||scout)?[{model:'openai/gpt-6.1-sol'},{model:'openai/gpt-5.4-mini'},{model:'astra/bogus'},{thinking:'off'},{thinking:'xhigh'},{thinking:'bogus'},{model:null},{thinking:null}]:[{model:'openai/GPT-5.6-terra'},{model:'unknown/gpt-5.6-terra'},{model:'astra/bogus'},{thinking:'bogus'}];
+          const invalidChoices=(developer||scout)?[{model:'openai/gpt-5.6-sol'},{model:'openai/gpt-5.4-mini'},{model:'astra/bogus'},{thinking:'off'},{thinking:'xhigh'},{thinking:'bogus'},{model:null},{thinking:null}]:[{model:'openai/GPT-5.6-terra'},{model:'unknown/gpt-5.6-terra'},{model:'astra/bogus'},{thinking:'bogus'}];
           for(const extra of invalidChoices) {
             await assert.rejects(launch(extra),/candidate|Unsupported|unavailable|Astra|Invalid routing/);
             assert.equal(JSON.stringify(entries),before);
@@ -164,7 +269,7 @@ esac
           assert.equal(JSON.stringify(entries),before);assert.equal(existsSync(process.env.FAKE_LOG),false);
           assert.deepEqual(files(dir),beforeFiles,'Authentication-unavailable failure creates no resources');
           registry.getAvailable=available;
-          const model=models.find(m=>m.id===(scout?'gpt-5.6-terra':'gpt-5.6-sol'));
+          const model=models.find(m=>m.id==='gpt-6.1-terra');
           model.thinkingLevelMap={off:null,low:null,medium:null};
           await assert.rejects(launch(),/Unsupported thinking/);
           assert.equal(JSON.stringify(entries),before);assert.equal(existsSync(process.env.FAKE_LOG),false);
@@ -187,6 +292,197 @@ esac
             assert.equal(entries.at(-1).data.state,'completed');
           }
         }
+        else if(scenario.startsWith('parallel-review')) {
+          const missing=scenario.startsWith('parallel-review-missing') || scenario==='parallel-review-checkpoint-missing';
+          const persistFailure=scenario.includes('persist');
+          const terminalFailure=scenario.endsWith('-terminal');
+          if(missing) mkdirSync(dir+'/workspace');
+          const reader=name=>rawCall('subagent',{agent:'reviewer',name,task:'Inspect only.',...(missing?{cwd:dir+'/workspace'}:{})});
+          const records=()=>entries.filter(e=>e.customType==='delivery-tmux-owned-v1');
+          if(scenario==='parallel-review-dirty') writeFileSync(dir+'/dirty','changed');
+          await reader('reader-one');
+          if(scenario==='parallel-review-dirty') {
+            assert.equal(records().at(-1).data.reviewCandidate,undefined);
+            await assert.rejects(reader('second-dirty'),/already active/);
+            await rawCall('subagent_message',{name:'reader-one',action:'stop'});
+          } else if(scenario==='parallel-review-grants') {
+            const record=records().at(-1).data, path=record.sessionFile+'.loadout.json';
+            const saved=readFileSync(path,'utf8');
+            writeFileSync(path,JSON.stringify({...record.loadout,toolAllowlist:'bash,ask_question'}));
+            await assert.rejects(reader('second-unpinned'),/loadout/);
+            writeFileSync(path,saved);
+            await rawCall('subagent_message',{name:'reader-one',action:'stop'});
+          } else {
+          await reader('reader-two');
+          assert.equal(records().filter(e=>e.data.state==='running').length,2);
+          assert.equal(records().at(-1).data.reviewCandidate,'a'.repeat(40));
+          if(scenario==='parallel-review-control-journal') {
+            await assert.rejects(rawCall('subagent_message',{name:'reader-one',action:'pause'}),/control journal failed/);
+            for(const name of ['reader-one','reader-two']) assert.equal(records().filter(e=>e.data.name===name).at(-1).data.reviewInvalid,true);
+            await assert.rejects(reader('blocked-after-control-failure'),/unavailable/);
+            writeFileSync(process.env.DONE_FILE,'done'); await sleep(1500);
+            assert.ok(messages.some(m=>m.customType==='subagent_result'&&m.details.name==='reader-two'&&m.details.status==='error'&&m.details.reviewInvalid));
+            await start(extension);
+            await assert.rejects(reader('blocked-after-control-restart'),/unavailable/);
+            process.exit(0);
+          }
+          if(scenario==='parallel-review-terminal-journal' || scenario.startsWith('parallel-review-checkpoint-')) {
+            const checkpoint=scenario.startsWith('parallel-review-checkpoint-');
+            const checkpointPersist=scenario==='parallel-review-checkpoint-persist';
+            if(checkpoint) {
+              if(missing) renameSync(dir+'/workspace',dir+'/workspace-moved');
+              else writeFileSync(dir+'/dirty','changed');
+              if(checkpointPersist) writeFileSync(dir+'/fail-journal','fail');
+            }
+            writeFileSync(process.env.DONE_FILE,'done'); await sleep(1500);
+            if(checkpoint) assert.equal(checkpointWriteFailures,1);
+            else {
+              assert.equal(terminalWriteFailures,1);
+              assert.ok(globalThis.__executionEvents.some(e=>e.type==='execution-time'&&e.name==='reader-one'),'execution checkpoint succeeded first');
+            }
+            const unresolved=records().filter(e=>e.data.name==='reader-one').at(-1).data;
+            assert.equal(unresolved.state,'running','failed write retains ownership');
+            if(!checkpointPersist) {
+              assert.equal(unresolved.reviewInvalid,true);
+              assert.equal(records().filter(e=>e.data.name==='reader-two').at(-1).data.reviewInvalid,true,'active peer invalidated');
+            }
+            const result=messages.find(m=>m.customType==='subagent_result'&&m.details.name==='reader-one');
+            assert.equal(result.details.status,'error'); assert.equal(result.details.terminalUnresolved,true);
+            assert.match(result.content,/UNRESOLVED TERMINAL OWNERSHIP/);
+            assert.ok(!messages.some(m=>m.customType==='subagent_result'&&m.details.name==='reader-one'&&m.details.status==='completed'));
+            await assert.rejects(reader('blocked-after-failure'),/unavailable/);
+            if(checkpoint) {
+              if(missing) renameSync(dir+'/workspace-moved',dir+'/workspace');
+              else renameSync(dir+'/dirty',dir+'/dirty-restored');
+            }
+            writeFileSync(dir+'/done-second','done'); await sleep(1500);
+            assert.ok(messages.some(m=>m.customType==='subagent_result'&&m.details.name==='reader-two'&&m.details.status==='error'&&m.details.reviewInvalid));
+            if(checkpointPersist) renameSync(dir+'/fail-journal',dir+'/fail-journal-restored');
+            await start(extension);
+            assert.equal(records().filter(e=>e.data.name==='reader-one').at(-1).data.state,'running');
+            assert.equal(records().filter(e=>e.data.name==='reader-one').at(-1).data.reviewInvalid,true);
+            await assert.rejects(reader('blocked-after-restart'),/unavailable/);
+            process.exit(0); // Unresolved fixture ownership deliberately retained.
+          }
+          const recovering=['parallel-review-startup','parallel-review-startup-persist','parallel-review-recovery','parallel-review-legacy'].includes(scenario);
+          if(scenario==='parallel-review') {
+            await rawCall('subagent_message',{name:'reader-one',action:'pause'});
+            await assert.rejects(launch({name:'writer-blocked'}),/already active/);
+          }
+          if(scenario==='parallel-review-legacy') for(const entry of records()) delete entry.data.reviewWorkspace;
+          if(scenario==='parallel-review-recovery') {
+            const record=records().find(e=>e.data.name==='reader-two').data;
+            writeFileSync(record.sessionFile+'.loadout.json',JSON.stringify({...record.loadout,toolAllowlist:'bash,ask_question'}));
+          }
+          if(missing) renameSync(dir+'/workspace',dir+'/workspace-moved');
+          else if(scenario!=='parallel-review-legacy' && scenario!=='parallel-review-recovery') writeFileSync(dir+'/dirty','changed');
+          if(persistFailure) writeFileSync(dir+'/fail-journal','fail');
+          if(recovering) {
+            await start(extension);
+            await assert.rejects(reader('third'),/unavailable/);
+          } else if(!terminalFailure) {
+            await assert.rejects(rawCall('subagent_message',{name:'reader-one',...(scenario==='parallel-review'?{action:'rearm'}:{message:'continue'})}),/candidate|clean worktree|ENOENT/);
+          }
+          if(!persistFailure && !terminalFailure) for(const name of ['reader-one','reader-two']) assert.equal(records().filter(e=>e.data.name===name).at(-1).data.reviewInvalid,true);
+          if(!terminalFailure) {
+            if(missing) renameSync(dir+'/workspace-moved',dir+'/workspace');
+            else if(existsSync(dir+'/dirty')) renameSync(dir+'/dirty',dir+'/dirty-restored');
+          }
+          writeFileSync(process.env.DONE_FILE,'done'); await sleep(1500);
+          if(terminalFailure) {
+            if(missing) renameSync(dir+'/workspace-moved',dir+'/workspace');
+            else if(existsSync(dir+'/dirty')) renameSync(dir+'/dirty',dir+'/dirty-restored');
+          }
+          const names=scenario==='parallel-review'?['reader-two']:['reader-one','reader-two'];
+          for(const name of names) {
+            assert.ok(messages.some(m=>m.customType==='subagent_result'&&m.details.name===name&&m.details.status==='error'&&m.details.reviewInvalid),name+' must not publish success');
+          }
+          if(persistFailure) {
+            renameSync(dir+'/fail-journal',dir+'/fail-journal-restored');
+            await start(extension); // Clean again, but the unresolved saved readers are still invalidated.
+            for(const name of ['reader-one','reader-two']) assert.equal(records().filter(e=>e.data.name===name).at(-1).data.reviewInvalid,true);
+            await assert.rejects(reader('after-failed-write'),/unavailable/);
+          }
+          if(scenario==='parallel-review') await rawCall('subagent_message',{name:'reader-one',action:'stop'});
+          if(recovering || persistFailure) process.exit(0); // Unresolved simulated restart; no claimed teardown.
+          }
+        }
+        else if(scenario==='legacy-policy-resume') {
+          const result=await launch({name:'legacy-policy'});
+          const record=entries.find(e=>e.customType==='delivery-tmux-owned-v1').data;
+          delete record.loadout.resourcePolicy;
+          record.loadout.model='openai/gpt-5.6-sol';record.loadout.thinking='high';record.loadout.cwd=dir;
+          record.resources.deny=['extensions','mcp','skills','prompt-templates','themes','context-files'];
+          writeFileSync(record.sessionFile+'.loadout.json',JSON.stringify(record.loadout));
+          writeFileSync(record.sessionFile,JSON.stringify({type:'session',version:3,id:'legacy-child',cwd:dir})+'\\n');
+          await start(extension);
+          await assert.rejects(launch({name:'alias-collision',cwd:dir+'/.'}),/already active/);
+          await rawCall('subagent_message',{name:'legacy-policy',action:'stop'});await sleep(1100);
+          const resumed=await rawCall('subagent_message',{name:'legacy-policy',message:'Continue original authorized work'});
+          assert.equal(resumed.details.status,'started');
+          const script=readFileSync(resumed.details.launchScriptFile,'utf8');
+          for(const flag of record.resources.deny)assert.ok(script.includes('--no-'+flag));
+          assert.ok(script.includes('openai/gpt-5.6-sol'));assert.match(script,/--thinking.*high/);
+          const last=entries.filter(e=>e.customType==='delivery-tmux-owned-v1').at(-1).data;
+          assert.equal(last.loadout.resourcePolicy,undefined);assert.deepEqual(last.resources.deny,record.resources.deny);
+        }
+        else if(scenario==='clean-three-builders-review') {
+          const {execFileSync}=await import('node:child_process'), {mkdirSync}=await import('node:fs');
+          const env={PATH:'/usr/bin:/bin',HOME:dir,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null'};
+          const git=(...args)=>execFileSync('git',['-c','core.hooksPath=/dev/null','-c','core.fsmonitor=false',...args],{env,stdio:'pipe'}).toString().trim();
+          const {initSyntheticGit}=await import(${JSON.stringify(join(root, "tests/fixtures/synthetic-git.mjs"))});
+          const initial=initSyntheticGit(dir,env,{checkout:false});
+          const names=['one','two','three'],trees=names.map(name=>dir+'/trees/'+name);
+          mkdirSync(dir+'/resources');
+          for(const [i,tree] of trees.entries()) { git('-C',dir,'worktree','add','--detach',tree,initial);mkdirSync(dir+'/resources/'+names[i]); }
+          const starts=await Promise.all(trees.map((tree,i)=>launch({name:'clean-builder-'+names[i],cwd:tree,task:'Synthetic setup; separately assigned resource '+dir+'/resources/'+names[i]+'; no actual worker.'})));
+          assert.ok(starts.every(x=>x.details.status==='started'));
+          const records=()=>entries.filter(e=>e.customType==='delivery-tmux-owned-v1');
+          for(const [i,tree] of trees.entries()) {
+            const record=records().find(e=>e.data.name==='clean-builder-'+names[i]).data;
+            assert.equal(record.loadout.cwd,(await import('node:fs')).realpathSync(tree));
+            assert.equal(git('-C',tree,'rev-parse','HEAD'),initial);assert.equal(git('-C',tree,'status','--porcelain','--untracked-files=all'),'');
+          }
+          await assert.rejects(launch({name:'conflicting-builder',cwd:trees[0]}),/already active/);
+          await Promise.all(names.map(name=>rawCall('subagent_message',{name:'clean-builder-'+name,action:'stop'})));await sleep(1200);
+          const readers=await Promise.all(['first','second'].map(name=>rawCall('subagent',{agent:'reviewer',name:'clean-review-'+name,cwd:trees[0],task:'Inspect the same clean synthetic candidate; no actual worker.'})));
+          assert.ok(readers.every(x=>x.details.status==='started'));
+          for(const name of ['first','second']) {
+            const record=records().find(e=>e.data.name==='clean-review-'+name).data;
+            assert.equal(record.reviewCandidate,initial);assert.equal(record.reviewWorkspace,(await import('node:fs')).realpathSync(trees[0]));
+            assert.doesNotMatch(record.loadout.toolAllowlist,/(^|,)(bash|write|edit)(,|$)/);
+          }
+          await assert.rejects(launch({name:'review-writer-conflict',cwd:trees[0]}),/already active/);
+        }
+        else if(scenario==='parallel-worktrees') {
+          const {execFileSync}=await import('node:child_process');
+          const env={...process.env,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null'};
+          const git=(...args)=>execFileSync('git',['-c','user.name=Fixture','-c','user.email=fixture@example.test','-c','core.hooksPath=/dev/null',...args],{env,stdio:'pipe'});
+          git('init','-q','--template=',dir);git('-C',dir,'commit','--allow-empty','-qm','fixture');
+          const tree=dir+'-linked-tree';git('-C',dir,'worktree','add','--detach',tree);
+          const [one,two]=await Promise.all([launch({name:'parallel-main'}),launch({name:'parallel-tree',cwd:tree})]);
+          assert.equal(one.details.status,'started');assert.equal(two.details.status,'started');
+          const records=()=>entries.filter(e=>e.customType==='delivery-tmux-owned-v1');
+          assert.equal(records().find(e=>e.data.name==='parallel-tree').data.loadout.cwd,(await import('node:fs')).realpathSync(tree));
+          await assert.rejects(launch({name:'same-tree',cwd:tree}),/already active/);
+          await assert.rejects(launch({name:'unlinked',cwd:dir+'/bin'}),/linked worktree/);
+          await rawCall('subagent_message',{name:'parallel-main',action:'stop'});
+          await sleep(1200);
+          await assert.rejects(launch({name:'tree-still-owned',cwd:tree}),/already active/);
+          const next=await launch({name:'main-again'});assert.equal(next.details.status,'started');
+          await start(extension);
+          await assert.rejects(launch({name:'reloaded-tree',cwd:tree}),/already active/);
+          await rawCall('subagent_message',{name:'parallel-tree',action:'pause'});
+          await assert.rejects(launch({name:'paused-tree',cwd:tree}),/already active/);
+          assert.equal(records().filter(e=>e.data.name==='parallel-tree').at(-1).data.state,'paused');
+        }
+        else if(scenario==='compact-developer') {
+          const {selection,...compact}=authority;
+          const result=await rawCall('developer',{...compact,packet:'Implement only the authorized fixture outcome; preserve unrelated work, run fixture checks and report gaps.',name:'compact'});
+          assert.equal(result.details.status,'started');
+          const record=entries.find(e=>e.customType==='delivery-tmux-owned-v1').data;
+          assert.deepEqual(record.workflow,{kind:'developer',approvalRef:authority.approvalRef,packetRef:authority.packetRef});
+        }
         else if(scenario==='failure-rollback'||scenario==='persistence-failure') {
           if(scenario==='failure-rollback')writeFileSync(process.env.FAIL_TRANSPORT,'fail');
           await assert.rejects(launch(),scenario==='failure-rollback'?/send-keys/:/storage failed/);
@@ -195,8 +491,12 @@ esac
             const next=await launch({name:'retry'});assert.equal(next.details.status,'started');
           } else {await assert.rejects(launch({name:'retry'}),/unavailable/);}
         } else {
-          if(scenario==='timeout'||scenario==='pause-exit-timeout') globalThis.setTimeout=(fn,ms,...args)=>realTimeout(fn,ms===1200000?(scenario==='timeout'?30:1500):ms,...args);
-          const pending=launch();
+          if(scenario==='timeout'||scenario==='pause-exit-timeout') {
+            let executionNow=0;Object.defineProperty(performance,'now',{value:()=>executionNow,configurable:true});
+            globalThis.setTimeout=(fn,ms,...args)=>ms>=60000?realTimeout(()=>{executionNow+=ms;fn(...args);},scenario==='timeout'?30:1500):realTimeout(fn,ms,...args);
+          }
+          const limit=(scenario==='timeout'||scenario==='pause-exit-timeout')?{name:'owned',assignment:{id:'explicit-limit',scopeRef:'fixture',approvalRef:scout?scoutAuthority.discoveryAuthorityRef:authority.approvalRef,packetRef:scout?scoutAuthority.discoveryAuthorityRef:authority.packetRef,effortMinutes:20}}:{};
+          const pending=launch({...routeExtra,...limit});
           await assert.rejects(launch({name:'sibling'}),/already active/);
           await assert.rejects((developer||scout)?rawCall('subagent',{agent:'reviewer',name:'team-overlap',task:'No worker'}):rawCall('developer',{...authority,name:'developer-overlap'}),/already active/);
           await assert.rejects(rawCall('scout',{...scoutAuthority,name:'scout-overlap'}),/already active/);
@@ -224,19 +524,55 @@ esac
             assert.ok(task.includes(authority.approvalRef)&&task.includes(authority.packetRef));
             assert.match(task,/No Team artifact set is required/);
           }
-          assert.equal(record.loadout.model,routeExtra.model??(scout?'openai/gpt-5.6-terra':'openai/gpt-5.6-sol')); assert.equal(record.loadout.thinking,routeExtra.thinking??(scout?'low':'medium'));
-          assert.equal(record.resources.deny.length,6);
+          const expectedModel=routeExtra.model??(scout?(routeExtra.taskKind==='lookup'?(routeExtra.profile==='strong'?'openai/gpt-6.1-terra':'openai/gpt-6-luna'):routeExtra.profile==='strong'?'openai/gpt-6.1-sol':'openai/gpt-6.1-terra'):'openai/gpt-6.1-terra');
+          assert.equal(record.loadout.model,expectedModel); assert.equal(record.loadout.thinking,routeExtra.thinking??(routeExtra.taskKind==='lookup'?(routeExtra.profile==='strong'?'medium':'low'):'medium'));
+          assert.deepEqual(record.resources.deny,['extensions','mcp']);
+          assert.equal(record.loadout.resourcePolicy,'project-context');
           const {fileURLToPath}=await import('node:url');
           assert.equal(fileURLToPath(record.resources.control),${JSON.stringify(join(root, "vendor/pi-interactive-subagents/pi-extension/subagents/subagent-done.ts"))});
           const script=readFileSync(result.details.launchScriptFile,'utf8');
-          for(const flag of ['--no-extensions','--no-mcp','--no-skills','--no-prompt-templates','--no-themes','--no-context-files']) assert.ok(script.includes(flag));
+          for(const flag of ['--no-extensions','--no-mcp']) assert.ok(script.includes(flag));
+          for(const flag of ['--no-skills','--no-prompt-templates','--no-themes','--no-context-files']) assert.ok(!script.includes(flag));
           assert.equal((script.match(/ -e /g)||[]).length,2); assert.match(script,/subagent-done.ts/);
           assert.match(script,/-e builtin:codemode/);
           assert.ok(script.includes(scout?'read,grep,find,ls,codemode,ask_question':'read,grep,find,ls,bash,edit,write,codemode,ask_question'));
           if(scout)assert.doesNotMatch(script,/--tools '[^']*(bash|edit|write|subagent|web)/);
           assert.doesNotMatch(script,/UNAPPROVED|claude|PI_SUBAGENT_ALLOWED/);
           const header=JSON.stringify({type:'session',version:3,id:'child',cwd:dir})+'\\n';writeFileSync(record.sessionFile,header);
-          if(scenario==='correlation-live'||scenario==='correlation-terminal') {
+          if(scenario==='notification-evidence'||scenario==='notification-error-evidence') {
+            const failed=scenario==='notification-error-evidence';
+            const tail=failed?'TAIL ERROR/COVERAGE CAVEAT':'TAIL FAILURE/COVERAGE CAVEAT';
+            const long='x'.repeat(17000)+tail;
+            const publication=JSON.stringify({type:'question',runId:record.id,questionId:'long-q',question:long,name:'owned',agent:'builder'});
+            writeFileSync(record.sessionFile+'.pending-question',publication);
+            writeFileSync(record.sessionFile+'.ask',publication);
+            await sleep(1200);
+            const question=messages.find(m=>m.customType==='subagent_question'); assert.ok(question);
+            const verify=message=>{
+              assert.ok(message.content.length<=16000);assert.match(message.content,/TRUNCATED/);
+              const pointer=message.details.notificationEvidence;
+              assert.equal(pointer.sessionFile,parent);
+              const entry=readFileSync(pointer.sessionFile,'utf8').trim().split('\\n').map(JSON.parse).find(e=>e.customType===pointer.customType&&e.data.evidenceId===pointer.evidenceId);
+              assert.ok(entry.data.message.content.includes(long),'Full omitted question/result/error is retrievable exactly from pointer');
+              assert.ok(message.content.includes(pointer.evidenceId));
+            };
+            verify(question);
+            await rawCall('subagent_message',{name:'owned',runId:record.id,questionId:'long-q',message:'Fixture answer'});
+            writeFileSync(record.sessionFile,header+JSON.stringify({type:'message',message:{role:'assistant',content:[{type:'text',text:long}]}})+'\\n');
+            writeFileSync(process.env.DONE_FILE,'done');await sleep(1200);
+            const completed=messages.find(m=>m.customType==='subagent_result');assert.ok(completed);verify(completed);
+            assert.equal(completed.details.status,failed?'error':'completed');
+            assert.equal(completed.details.exitCode,failed?7:0);
+            assert.ok(!completed.content.includes('subagent_message({'));
+            const theme={fg:(_c,t)=>t,bg:(_c,t)=>t,bold:t=>t};
+            const lines=extension.messageRenderers.get('subagent_result')(completed,{expanded:true},theme).render(80);
+            const rendered=lines.join('\\n');
+            assert.match(rendered,/TRUNCATED/,'Renderer must not strip the evidence notice with the follow-up hint');
+            const visible=rendered.replace(/\\s/g,'');
+            for(const value of Object.values(completed.details.notificationEvidence)) assert.ok(visible.includes(value.replace(/\\s/g,'')),'Complete path/type/UUID must be visible at 80 columns');
+            assert.ok(lines.every(line=>line.length<=80),'Wrapped renderer fits the terminal');
+            assert.ok(!rendered.includes('subagent_message({'));
+          } else if(scenario==='correlation-live'||scenario==='correlation-terminal') {
             const terminal=scenario==='correlation-terminal';
             if(terminal) {
               writeFileSync(process.env.DONE_FILE,'done');await sleep(1200);unlinkSync(process.env.DONE_FILE);
@@ -407,10 +743,10 @@ esac
           } else if(scenario==='saved-resume') {
             writeFileSync(process.env.DONE_FILE,'done');await sleep(1200);unlinkSync(process.env.DONE_FILE);
             assert.equal(entries.at(-1).data.state,'completed');
-            // Simulate an accepted older pinned record, including a 6.1 parent model.
+            // Simulate an accepted older 5.6 Sol record: new defaults cannot rewrite it.
             // New routing must never reinterpret it, even with no available models.
             for(const entry of entries) if(entry.customType==='delivery-tmux-owned-v1') {
-              entry.data.loadout.model='openai/gpt-6.1-sol';entry.data.loadout.thinking='xhigh';
+              entry.data.loadout.model='openai/gpt-5.6-sol';entry.data.loadout.thinking='xhigh';
             }
             writeFileSync(record.sessionFile+'.loadout.json',JSON.stringify(record.loadout));
             await start(extension);
@@ -436,10 +772,12 @@ esac
             writeFileSync(process.env.DONE_FILE,'done');await sleep(1200);
             assert.equal(entries.at(-1).data.state,'paused');
             await assert.rejects(launch({name:'paused-terminal-sibling'}),/already active/);
-            await sleep(500);assert.equal(entries.at(-1).data.state,'cancelled');
+            await sleep(500);assert.equal(entries.at(-1).data.state,'paused','Pause does not expire an execution grant');
+            await call('subagent_message',{name:'owned',action:'stop'});
+            assert.equal(entries.at(-1).data.state,'cancelled');
             assert.ok(messages.some(m=>m.customType==='subagent_cancelled'));
             unlinkSync(process.env.DONE_FILE);
-            const next=await launch({name:'after-preserved-timeout'});assert.equal(next.details.status,'started');
+            const next=await launch({name:'after-preserved-stop'});assert.equal(next.details.status,'started');
           } else if(scenario==='unresolved-owned') {
             // Simulate a saved active record without its matching live watcher.
             entries.at(-1).data.id='unknown-run';
@@ -481,13 +819,13 @@ esac
         }
       }
       if(existsSync(process.env.FAKE_LOG)) {
-        const log=readFileSync(process.env.FAKE_LOG,'utf8');assert.doesNotMatch(log,/select-layout|kill-pane -t %unowned|kill-pane -t %parent/);
+        const log=readFileSync(process.env.FAKE_LOG,'utf8');assert.doesNotMatch(log,/split-window|select-layout|kill-pane -t %unowned|kill-pane -t %parent/);
       }
     `;
     const result = spawnSync(process.execPath, ["--input-type=module", "-e", program], {
       cwd: dir, encoding: "utf8", timeout: 15000,
-      env: { ...process.env, HOME: dir, PI_CODING_AGENT_DIR: agent, PATH: `${bin}:/usr/bin:/bin`,
-        TMUX: scenario.endsWith("non-tmux") ? "" : "fake", TMUX_PANE: "%parent", FAKE_LOG: join(dir, "tmux.log"),
+      env: { ...process.env, ...(scenario === "api-clean-three-builders-review" ? { PARALLEL_ADDY_RETAIN_FIXTURES: "1" } : {}), HOME: dir, PI_CODING_AGENT_DIR: agent, PATH: `${bin}:/usr/bin:/bin`,
+        TMUX: scenario.endsWith("non-tmux") ? "" : "fake", TMUX_PANE: "%parent", FAKE_LOG: join(dir, "tmux.log"), REVIEW_ROOT: dir,
         FAIL_TRANSPORT: join(dir, "fail"), FAIL_CLEANUP: join(dir, "fail-cleanup"), DONE_FILE: join(dir, "done"), PI_OFFLINE: "1", PI_SUBAGENT_AGENT: "", PI_SUBAGENT_ALLOWED: "", PI_SUBAGENT_SHELL_READY_DELAY_MS: "40" },
     });
     assert.equal(result.status, 0, result.stderr + result.stdout);

@@ -1,6 +1,6 @@
 ---
 name: homelab-validation
-description: Use when work needs a container, staging stack, database, build, or browser/API test environment. Prefer the HomeLab validation VM over MacBook-local runtimes.
+description: Use when work needs a container, staging stack, database, build, or browser/API test environment. Prefer the HomeLab validation VM for workloads and the Mac browser for user-facing validation.
 ---
 
 # HomeLab Validation
@@ -24,11 +24,18 @@ Propose setup commands and teardown commands together; obtain approval
 before making changes.
 
 Create or reuse the project directory. Run container builds, compose
-stacks, migrations, databases, and browser/API checks on the VM.
+stacks, migrations, and databases on the VM. For user-facing browser validation,
+prefer the browser on the Mac accessing the normal HomeLab URL, so the check
+also covers that network path. Run API checks on the VM unless the client
+network path is part of the requirement. If Mac browser access is unavailable,
+report the limitation and discuss a VM-side fallback; do not present it as
+proof that the Mac's normal access path works.
 Use Caddy only when a stable browser/API endpoint is needed.
 Keep workloads disposable; permanent services need explicit promotion.
 
 ## Teardown when idle
+
+For user-facing changes, plan a manual-review handoff in the validation environment: verify the normal access path and provide the URL, test steps and limitations. Keep the approved stack available until the user finishes; if access or continued operation is blocked, say so and recommend the next step rather than implying it is ready.
 
 A project stack runs only while an agent actively tests against it,
 or while waiting for the user to answer a manual-validation request.

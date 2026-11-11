@@ -8,4 +8,4 @@ Resolve ordinary technical uncertainty from evidence. A red task-owned check tri
 
 Do not delegate, expand scope, push, publish or perform destructive cleanup. Commit only if explicitly permitted. Respect unrelated edits; ask about genuinely ambiguous ownership or overlap. Stop for missing material authority, consequential design/security/product decisions, exhausted agreed limits or no-progress repair—not ordinary implementation choices.
 
-Report changes, commands/results, actual skips or gaps and a usable next step. Keep logs on disk; no invented active-minute accounting. Worker completion is not coordinator acceptance; the lead inspects changes and evidence, with fresh validation/review for Team.
+Report changes, commands/results, actual skips or gaps and a usable next step. Keep logs on disk; no invented active-minute accounting. Worker completion is not coordinator acceptance; the lead inspects changes and evidence, with affected checks and any requested independent review.

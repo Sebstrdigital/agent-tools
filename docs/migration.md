@@ -65,3 +65,11 @@ Validation passed for all 11 shared skill names/frontmatter, the exact permitted
 The initial publication set contains 182 files, approximately 1.35 MB. A targeted scan of staged text for private keys, common token formats, credential URLs, and quoted credential assignments found zero matches. This is not an exhaustive privacy/security audit; no dedicated secret scanner was available. Publication exclusions were checked explicitly.
 
 Git's whitespace check reports two intentional Markdown hard-break lines in the preserved `platforms/pi/skills/duadigital-pdf-maker/FORMAT.md` (lines 10–11); those source bytes were deliberately retained. No harness discovery, behavior trials, installer execution, or live cutover is claimed.
+
+## Current-source refresh
+
+The user approved refreshing the Pi preservation copy from its current working tree, including uncommitted source and workflow changes, while excluding personal data, logs and experimental evidence from publication. The original Pi source was at `5bc3bb043b339827f1b275c1150dc423f75a74f5` with uncommitted changes; the Claude source remained clean at `137884490da84a7c106c0aec636835d4e0a96cd8` and its tracked files matched the copy.
+
+The refresh updated 45 and added 148 publishable Pi files, including supporting tests and vendor licenses. Previous tracked variants remain available at agent-tools commit `c7ddcc2`; the original repositories and live installations remain unchanged. The initial local manifest records the earlier snapshot, not the refreshed Pi tree. Historical and experimental evidence, logs, screenshots, drafts, retrospectives, trial documents and personal handover material were not published. Some imported documents may still reference excluded local evidence.
+
+The 193 refreshed files matched their corresponding source bytes. A targeted credential and personal-path pattern scan produced no confirmed findings; it is not a comprehensive privacy audit. The isolated cleanup-inventory unit tests passed (7 tests). No copied installer, live integration or cutover was run or validated.

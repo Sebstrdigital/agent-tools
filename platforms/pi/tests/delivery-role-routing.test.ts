@@ -26,10 +26,10 @@ for (const scenario of ["defaults", "strong-start", "exact-availability", "effor
       import {ModelRegistry} from ${JSON.stringify(join(host, "dist/core/model-registry.js"))};
       export default function(pi) {
         pi.registerTool({name:'probe',parameters:{type:'object',properties:{}},execute:async()=>{
-          const mini='openai/gpt-5.4-mini',terra='openai/gpt-5.6-terra',sol='openai/gpt-5.6-sol';
-          const models=[mini,terra,sol,'other/gpt-5.4-mini','openai/custom/id'].map(name=>{
+          const mini='openai/gpt-5.4-mini',terra='openai/gpt-5.6-terra',builderTerra='openai/gpt-6.1-terra',sol='openai/gpt-6.1-sol',luna='openai/gpt-6-luna';
+          const models=[mini,terra,builderTerra,sol,luna,'other/gpt-5.4-mini','openai/custom/id'].map(name=>{
             const slash=name.indexOf('/');return {provider:name.slice(0,slash),id:name.slice(slash+1),type:'chat',api:'openai-responses',
-              name,reasoning:true,thinkingLevelMap:{off:'none',xhigh:'xhigh'},input:['text'],contextWindow:128000,maxTokens:16000,
+              name,reasoning:true,thinkingLevelMap:{off:name===sol?null:'none',minimal:null,xhigh:'xhigh'},input:['text'],contextWindow:128000,maxTokens:16000,
               cost:{input:0,output:0,cacheRead:0,cacheWrite:0}};
           });
           let available=models, error;
@@ -38,17 +38,19 @@ for (const scenario of ["defaults", "strong-start", "exact-availability", "effor
           const route=(role,choice={},restricted=false)=>resolveRoleRoute(role,choice,registry,restricted);
           const scenario=${JSON.stringify(scenario)};
           if(scenario==='defaults') {
-            for(const [role,model,thinking] of [['scout',terra,'low'],['builder',sol,'medium'],['validator',terra,'low'],['reviewer',sol,'medium']]) {
+            for(const [role,model,thinking] of [['scout',builderTerra,'medium'],['builder',builderTerra,'medium'],['validator',builderTerra,'medium'],['reviewer',builderTerra,'high']]) {
               assert.deepEqual(route(role),{model,thinking});
-              assert.doesNotMatch(model,/astra|6\\.1/i);
+              assert.doesNotMatch(model,/astra/i);
             }
-            assert.deepEqual(route('scout',{taskKind:'lookup'}),{model:terra,thinking:'low'});
-            assert.equal(route('scout',{taskKind:'analysis'}).thinking,'low');
+            assert.deepEqual(route('scout',{taskKind:'lookup'}),{model:luna,thinking:'low'});
+            assert.deepEqual(route('scout',{taskKind:'analysis'}),{model:builderTerra,thinking:'medium'});
+            assert.deepEqual(route('scout',{taskKind:'lookup',model:luna,thinking:'none'},true),{model:luna,thinking:'off'});
           } else if(scenario==='strong-start') {
-            for(const [role,model,thinking] of [['scout',terra,'medium'],['builder',sol,'high'],['validator',sol,'medium'],['reviewer',sol,'high']]) {
+            for(const [role,model,thinking] of [['scout',sol,'medium'],['builder',sol,'high'],['validator',sol,'high'],['reviewer',sol,'high']]) {
               assert.deepEqual(route(role,{profile:'strong'}),{model,thinking});
             }
-            assert.equal(route('reviewer',{thinking:'xhigh'},true).thinking,'xhigh');
+            assert.equal(route('reviewer',{model:sol,thinking:'xhigh'},true).thinking,'xhigh');
+            assert.deepEqual(route('scout',{taskKind:'lookup',profile:'strong'},true),{model:builderTerra,thinking:'medium'});
             assert.equal(route('scout',{profile:'strong',thinking:'low'},true).thinking,'low');
             assert.throws(()=>route('builder',{profile:'retry'}),/Invalid routing profile/);
             assert.throws(()=>route('builder',{taskKind:'lookup'}),/Invalid Scout taskKind/);
@@ -65,21 +67,23 @@ for (const scenario of ["defaults", "strong-start", "exact-availability", "effor
             assert.throws(()=>route('builder',{model:mini,thinking:'none'}),/Unsupported thinking off/);
             assert.throws(()=>route('scout',{model:mini},true),/candidate scout profiles/);
             assert.throws(()=>route('scout',{thinking:'off'},true),/candidate scout profiles/);
-            models[1].thinkingLevelMap.low=null;
+            models[4].thinkingLevelMap.low=null;
             assert.throws(()=>route('scout',{taskKind:'lookup'}),/Unsupported thinking low/);
-            models[2].thinkingLevelMap.xhigh=null;
-            assert.throws(()=>route('reviewer',{thinking:'xhigh'}),/Unsupported thinking xhigh/);
-            models[2].reasoning=false;
-            assert.throws(()=>route('builder'),/Unsupported thinking medium/);
+            assert.throws(()=>route('builder',{model:sol,thinking:'none'}),/Unsupported thinking off/);
+            models[3].thinkingLevelMap.xhigh=null;
+            assert.throws(()=>route('reviewer',{model:sol,thinking:'xhigh'}),/Unsupported thinking xhigh/);
+            models[3].reasoning=false;
+            assert.throws(()=>route('builder',{profile:'strong'}),/Unsupported thinking high/);
             assert.throws(()=>route('validator',{thinking:'bogus'}),/Unsupported thinking/);
             for(const value of [null,12,{},'', ' ']) {
               assert.throws(()=>route('builder',{model:value}),/Invalid routing model/);
               assert.throws(()=>route('builder',{thinking:value}),/Invalid routing thinking/);
             }
           } else {
-            for(const [model,thinking] of [[terra,'medium'],[sol,'medium'],[sol,'high']]) assert.deepEqual(route('builder',{model,thinking},true),{model,thinking});
-            assert.deepEqual(route('builder',{},true),{model:sol,thinking:'medium'});
-            for(const choice of [{model:mini},{model:'openai/gpt-6.1-sol'},{model:'astra/model'},{model:terra,thinking:'high'},{model:sol,thinking:'xhigh'},{thinking:'off'}]) assert.throws(()=>route('builder',choice,true),/candidate builder profiles|Astra/);
+            for(const [model,thinking] of [[builderTerra,'medium'],[sol,'medium'],[sol,'high']]) assert.deepEqual(route('builder',{model,thinking},true),{model,thinking});
+            assert.deepEqual(route('builder',{},true),{model:builderTerra,thinking:'medium'});
+            for(const choice of [{model:mini},{model:'openai/gpt-5.6-sol'},{model:luna},{model:'astra/model'},{model:terra},{model:builderTerra,thinking:'high'},{model:sol,thinking:'xhigh'},{thinking:'off'}]) assert.throws(()=>route('builder',choice,true),/candidate builder profiles|Astra/);
+            assert.throws(()=>route('scout',{model:terra},true),/candidate scout profiles/);
             assert.deepEqual(route('validator',{model:'other/gpt-5.4-mini',thinking:'medium'}),{model:'other/gpt-5.4-mini',thinking:'medium'},'Explicit supported Team choices remain independent');
           }
           return {content:[],details:{}};

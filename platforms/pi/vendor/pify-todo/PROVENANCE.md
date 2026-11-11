@@ -16,16 +16,21 @@ The extra storage is the deliberate trade-off for an exact reproducible pin.
 Toolkit integration lives outside this unchanged source, in
 extensions/lean-progress/index.ts. It captures native registrations, checks known
 collisions at session_start (not unbound factory action APIs), activates once and
-replays startup once. It replaces only model-facing description and rejects
-multiple active writes. Native state, commands, restoration, widget and render
-logic are unchanged. Only this shim is installed; upstream package resource
+replays startup once. It replaces model-facing description and rejects
+multiple active writes. The toolkit presentation adapter in
+extensions/lean-progress/widget.ts hides fully completed lists and substitutes
+a responsive, display-column-aligned widget with up to three wrapped lines per
+item. Native state, commands and restoration logic are unchanged; the eight
+integrity-checked upstream files, including their original renderer, remain
+byte-for-byte pinned. Only this shim is installed; upstream package resource
 registration is NOT installed. Its bundled scratchpad skill is filtered out
 (equivalent to `skills: []`); no suite or second controller is loaded.
 
 Snapshots are branch-local view cache, NOT Team authority. Native limitations:
 30 rows, invalid entries dropped/defaulted with warnings, full-list replacement,
-10-row active-centered window, fixed box with 44 UTF-16-unit content truncation
-and host Text wrapping. Use /todos for full retained labels/reasons. Startup/tree
+10-row active-centered window. Upstream's fixed box and 44 UTF-16-unit truncation
+remain in the pinned source but are replaced at the toolkit UI boundary by the
+responsive projection described above. Use /todos for full retained labels/reasons. Startup/tree
 replays the current full branch; compaction and summarized tree navigation trigger
 one hidden restore message on the next turn. Reload after compaction restores
 widget snapshots but does not recreate the transient reinjection flag; reconcile

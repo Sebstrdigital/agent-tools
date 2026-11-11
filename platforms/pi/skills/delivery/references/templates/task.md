@@ -1,18 +1,15 @@
-# Task: <outcome>
+# Optional task: <outcome>
 
-<3–5 sentences: why, change, observable acceptance and boundaries.>
-Context: <workspace/branch; rules/source/design pointers>.
-Checks: <slice checks and final integrated checks; environment>.
+Use conversation, an issue or existing JSON instead when sufficient. No mandatory file.
 
-## Agreement
+## Task
+<Purpose, intended behavior, acceptance, relevant context and exclusions in a few sentences. Supporting-file changes are included unless explicitly restricted.>
 
-<Scope, unusual permissions and task repair allowance/allocation; slicing grants no extra cycles. Configured Team defaults apply.>
-Approval: <message/date; proposed until explicit approval>.
+## Authority / optional Agreement
+<User's actual execution request; no second confirmation. Unusual permissions or consequential unresolved decisions only. User-requested limits, if any; never invent repair caps. Configured Team defaults apply.>
 
 ## Plan / progress
+<Current candidate, useful dependencies/ownership, checks/review, decisions, blocker/next and evidence pointers. Parallel writers use distinct linked worktrees.>
 
-| ID / outcome | Depends on | Ownership | Parallel eligibility | State | Next / evidence |
-| --- | --- | --- | --- | --- | --- |
-| S1 / <vertical outcome> | none | <paths/interfaces> | <safe siblings or none; conflicts> | pending | <pointer> |
-
-<One fresh builder per slice after prerequisite acceptance; sequential execution. Current candidate, decisions, checks/review, repair allowance, blocker/next and evidence pointers. Reuse existing JSON fields if available; no second record.>
+## Outcome
+<Actual/reused checks, lead acceptance, exact candidate, manual checklist and honest gaps. No implied publication.>

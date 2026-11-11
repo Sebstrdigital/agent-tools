@@ -100,7 +100,7 @@ test("completion, packet delivery, evidence, and reviewer restrictions", async t
   assert.equal(args[args.indexOf("-e") + 1], "builtin:codemode");
   for (const flag of [
     "--no-session", "--no-approve", "--no-extensions", "--no-mcp",
-    "--no-skills", "--no-prompt-templates", "--no-themes", "--offline",
+    "--offline",
   ]) assert.ok(args.includes(flag));
   assert.ok(!args.includes("--no-context-files"));
   assert.ok(!args.includes("--model"));

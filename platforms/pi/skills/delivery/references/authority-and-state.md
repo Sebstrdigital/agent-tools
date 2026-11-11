@@ -1,37 +1,17 @@
-# Approval and state
+# Authority and state
 
-Use one compact Markdown or existing JSON record. Agreement states scope, acceptance, checks, permissions and limits. Team selection permits preparation only; execution needs approval identifying the actual Agreement, not a claimed hash.
+A user's clear request to execute an understood task authorizes ordinary reversible work, supporting files, checks, diagnosis, repair and reconciled continuation. No separate mode selection or Agreement approval; no mandatory task file. Conversation/issue/existing JSON is sufficient; retain a concise note when recovery benefits.
 
-Record approval once; progress is not scope. Consequential changes need renewed approval and a short dated note, not another file. In-scope edits, diagnosis, checks and bounded repairs need no repeated permission. Commit/install/delete/push/publish require authority.
+Proposals or requests for advice do not authorize implementation. Record actual authority once; metadata does not authenticate it. Preserve explicit exclusions, file restrictions and agreed limits, including older packets. Necessary supporting filenames are not by themselves a material scope change. Consequential behavior, privacy, trust, security, ownership, outward effects or required-check changes need a real decision.
 
-Use git status/diffs to separate task changes from unrelated work. Match checks/review to the final candidate; stronger identities serve specific integrity risks/runtime features.
+Direct remains appropriate for a small task: the lead may implement -> diagnose -> in-scope repair -> validate/review -> accept. Once delegation is selected, the lead coordinates/scopes, reads evidence, inspects source diffs/logs/screenshots/release metadata, maintains coordination notes and accepts; workers execute edits, diagnosis/repair and validation under their role grants and applicable authority. Lead shell/API use is read-only evidence inspection, but executing validation is worker work. No quick-fix or one-line exception applies. Red task-owned checks trigger worker repair, not silent lead takeover: reconcile ownership/resources, then continue, redirect or replace. A switch from delegated work to Direct must be explicit and follow reconciliation, never serve as a red-check workaround. Ordinary compiler/test/harness corrections are implementation, not repair tokens. Do not invent quotas, per-role time pools or default cumulative accounting chores. Use explicit limits if the user requested them; do not reset them. Repeated failure calls for diagnosis and a changed strategy; demonstrated no progress can justify stopping.
 
-Pass purpose, constraints, acceptance, rules and relevant accepted prerequisite evidence, not worker transcripts. Read question-driven bounded source/evidence. Codemode must filter/aggregate before admission, not batch raw reads. No mandatory reading manifests or read receipts. Reuse unchanged context. Inspect complete changes in bounded sections; summaries do not replace review.
+Before marking any milestone complete, validate its acceptance condition and inspect evidence for the actual candidate/environment. Follow [validated milestone completion](../../../docs/workflows/validated-completion.md): failed or blocked validation leaves the milestone unfinished with reasons, and review environments require the normal user path rather than diagnostic bypasses. Reopen completed work if newer evidence invalidates it.
 
-Do not require unrelated apps to close. Isolate live-side-effect tests or propose exact exclusions with honest gaps; required-check changes need approval. Ask before stopping the app being developed. An excluded or missing check is not a pass.
+Worker completion is not acceptance. Inspect the complete task delta and meaningful checks; use independent roles proportionately and preserve any requested gates. Keep unresolved blocked/paused/cancelled/abandoned state visible. Missing checks are not passes. Renew affected evidence; reuse unchanged accepted evidence.
 
-The lead owns implement -> diagnose -> in-scope repair -> revalidate/review -> next approved task. Red task-owned checks trigger bounded repair. At most three focused repair cycles unless approval is stricter; renew affected checks/review. If the same defect survives two cycles, the third uses a fresh stronger same-role builder context with diagnosis before edits and no allowance reset. Existing approvals and declared runtime limits remain binding. Stop for authority/security/scope/ownership/material-decision boundaries, no progress or an exhausted agreed budget. No retroactive scope expansion.
+No mandatory reading manifests or read receipts. Purpose, scope/constraints, acceptance and relevant source/rules are enough. Logs stay on disk; bounded retrieval needs source pointers and honest truncation notices.
 
-Limits cannot reset on resume or fresh slice runs. Repairs remain attached to their slice within approved task/runtime allowances; slicing grants no extra cycles. Errors, silence or timeout are not acceptance. Reconcile source, evidence, state and resources before retry; never blindly replay mutations.
+Dispatch allows distinct linked worktrees concurrently. Shared-workspace workers remain exclusive except for pinned reviewers on the same verified clean Git candidate; pause/wait retain ownership. The check is not an immutable snapshot; see [parallel guidance](../../addy-engineering/references/parallel-work.md). Failed cleanup, unknown active workers and source drift require reconciliation, not another uncontrolled launch. A resume or replacement cannot silently reset a declared limit or rewrite saved pins. Timeout is cancellation, not acceptance or proof of no progress.
 
-## State
-
-The canonical record's Plan section is authoritative: slice IDs/outcomes, depends-on IDs, ownership, parallel eligibility, state/candidate, decisions, blockers and evidence pointers. The lead alone updates acceptance after required validation/review on the same revision. Start each slice in a fresh builder run only after prerequisite acceptance; never reuse a previous slice's builder for the next slice. Parallel eligibility is metadata, not authority; execution remains sequential. Retain final integrated validation/review.
-
-- **pending:** not started/dependency waiting.
-- **active:** implementation, validation or review underway.
-- **blocked:** concrete blocker and needed action.
-- **paused:** deliberately stopped; next step recorded.
-- **cancelled:** cancelled, not accepted.
-- **abandoned:** no longer pursued, not accepted.
-- **accepted:** lead accepted changes and final checks/review.
-
-Keep unresolved rows visible; no invented percentages. Engineering completion is not user acceptance or release permission.
-
-## Widget and handoff
-
-The opt-in widget maps accepted to completed **only**, active to in_progress and unresolved work to pending with [blocked], [paused], [cancelled] or [abandoned] labels. Filter its bundled scratchpad skill; see `../../../docs/progress.md`. After compaction/reload recover the task record and current state, not all history.
-
-Store a concise Munin next step/ID. Recall ranks relevance, not recency; use `munin show <id>` for a known handoff. No prompt or static test guarantees universal behavior.
-
-Runtime grants/routing/ownership are unchanged; consult `../../../docs/lean-workflows.md` or `../../../docs/workflows/scout-role-routing.md` only for relevant runtime questions.
+Do not interfere with unrelated applications; ask before stopping the application under development. Isolate live-side-effect tests and preserve private-data boundaries. Commit/install/delete/force/push/publish need applicable authority. Never blindly replay mutations, reset/stash unrelated work or delete unknown resources. Finish with exact candidate, checks, manual checklist and honest gaps.

@@ -4,7 +4,13 @@
 
 Start with Pi's native code mode. Keep tasks small, use fresh subagent contexts for bounded work, and keep coordinator handoffs and tool output concise and evidence-linked. Prevent unnecessary context growth rather than relying on conversation compression.
 
-This backlog records evaluation priorities only. It does not authorize installations, configuration changes, worker capability changes, or test execution.
+Earlier entries in this backlog record evaluation priorities only, not installation or execution authority. The user has now approved the narrower [lighter-generalist and complementary-retrieval BUILD plan](generalist-context-trial-plan.md), including `/pace`, main-session native MCP retrieval, and jCodeMunch index-readiness/freshness questions. Follow that plan's authority and exclusions; it does not authorize worker MCP grants or the other parked items here.
+
+## Evaluation update — 2026-10-13
+
+The [Ultra retrospective](dikta-ultra-retrospective.md) and [Native Kokoro snapshot](native-kokoro-workflow-retrospective.md) provide observational evidence: code-mode invocation alone did not reliably bound context; several scripts printed large raw batches. These are not matched tool/latency/cost benchmarks. The October 13 documentation audit also produced a truncated batch of complete notes before switching to smaller retrievals.
+
+The [current improvement proposition](workflow-improvement-package-2026-10-13.md) recommends a small deterministic native-retrieval comparison before adding tools: bounded results, preserved failures/skips/source pointers, explicit truncation and continuation to full evidence. Existing full-read and complete-diff obligations remain intact. No runtime output clamp, compaction setting, MCP installation or model change is authorized by this update. Native code mode is enabled; behavior/comparative efficiency remains an evaluation task, not a completed savings claim. Context Mode MCP remains pending; Billion Context remains parked.
 
 ## 1. Native Pi code mode — first priority
 

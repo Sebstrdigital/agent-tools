@@ -109,6 +109,8 @@ export type DeliveryRole = keyof typeof DELIVERY_TOOLS;
 export interface SubagentLoadout {
   /** Explicit opt-in; null explicitly denotes legacy, not delivery restrictions. */
   deliveryRole: DeliveryRole | null;
+  /** Absent retains legacy resource denial on saved resumes. */
+  resourcePolicy?: "project-context";
   /** Agent profile name (for PI_SUBAGENT_AGENT); null for agentless spawns. */
   agent: string | null;
   /** The `--tools` allowlist string, or null when the spawn was unrestricted. */
@@ -150,6 +152,7 @@ export function writeSubagentLoadout(sessionFile: string, loadout: SubagentLoado
 export function isSubagentLoadout(value: unknown): value is SubagentLoadout {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>;
+  if (Object.hasOwn(v, "resourcePolicy") && (v.resourcePolicy !== "project-context" || v.deliveryRole === null)) return false;
   const nullableStrings = ["agent", "toolAllowlist", "model", "thinking", "identity", "cwd", "agentDir"];
   for (const key of nullableStrings) {
     if (!Object.hasOwn(v, key) || (v[key] !== null &&
@@ -613,7 +616,7 @@ export interface SessionStats {
   outputTokens: number;
   cacheReadTokens: number;
   cacheWriteTokens: number;
-  /** Current context size: the last assistant turn's totalTokens. */
+  /** Approximate context size from the last assistant turn's usage. */
   contextTokens: number;
   /** Cumulative cost in USD across all assistant turns. */
   cost: number;
@@ -623,8 +626,9 @@ export interface SessionStats {
  * Parse a completed subagent session JSONL into aggregate stats for display:
  * model, tool-call count, cumulative token usage + cost, and current context
  * size. Cumulative usage fields are summed across every assistant turn; the
- * context size is taken from the last assistant turn's `totalTokens` (the live
- * context window occupancy). Returns null if the file can't be read.
+ * context estimate uses the last assistant turn's `totalTokens`, or the sum of
+ * its usage components when unavailable. It can lag current context, especially
+ * after compaction or new messages. Returns null if the file can't be read.
  */
 export function summarizeSessionStats(sessionFile: string): SessionStats | null {
   let entries: SessionEntry[];
@@ -669,7 +673,7 @@ export function summarizeSessionStats(sessionFile: string): SessionStats | null 
       stats.outputTokens += num(usage.output);
       stats.cacheReadTokens += num(usage.cacheRead);
       stats.cacheWriteTokens += num(usage.cacheWrite);
-      const total = num(usage.totalTokens);
+      const total = num(usage.totalTokens) || num(usage.input) + num(usage.output) + num(usage.cacheRead) + num(usage.cacheWrite);
       if (total > 0) stats.contextTokens = total;
       const cost = usage.cost;
       if (cost && typeof cost === "object") stats.cost += num((cost as Record<string, unknown>).total);

@@ -14,7 +14,7 @@ This repository currently preserves the working copies of `claude-tools` and `pi
 | `platforms/claude-code/` | Preserved Claude working copy |
 | `platforms/pi/` | Preserved Pi working copy |
 
-The first 11 shared skills are available under `skills/productivity/`; see [shared skills](skills/README.md). `tools/` remains empty pending classification. Platform copies retain their original layout, documentation, installers, tests, and supporting resources. Original instructions and paths may still reference the old locations: preservation is not proof of portability.
+The first 11 shared skills are available under `skills/productivity/`; see [shared skills](skills/README.md). `tools/` remains empty pending classification. The Pi preservation copy was refreshed from the source working tree, including uncommitted source changes; private and experimental evidence was excluded from publication. Original instructions and paths may still reference old locations: preservation is not proof of portability. See [migration status](docs/migration.md) for the source revisions and validation limits.
 
 ## Scope and design
 

@@ -37,7 +37,7 @@ This is a presentation workflow, not an automatic research or implementation wor
 
 Read `references/format.md`. Create a JSON presentation specification following that format, using the bundled renderer and assets as the default. A worked example is `references/example.json`.
 
-Choose a new filename and an appropriate output directory consistent with project rules (use a temporary directory if no repository artifact was requested). Keep the JSON beside the HTML so it can be inspected/regenerated. Resolve local source paths relative to the **JSON specification**, not the skill directory. Do not edit authoritative sources.
+Choose a new filename and an output directory consistent with project rules. For project-scoped presentations, keep output project-local: use the project's documentation location for a retained deliverable or one ignored project-local task workspace for a draft. Writing outside the owning project requires an explicit approved exception; lack of a request to commit the artifact is not an exception. For a genuinely non-project presentation, use a user-specified location or agree one before writing, rather than scattering temporary outputs. Follow [project-local artifacts and housekeeping](../../docs/workflows/project-artifacts.md); keep the requested deliverable available for the user and remove only authorized disposable intermediates. Keep the JSON beside the HTML so it can be inspected/regenerated. Resolve local source paths relative to the **JSON specification**, not the skill directory. Do not edit authoritative sources.
 
 Run with absolute skill paths:
 

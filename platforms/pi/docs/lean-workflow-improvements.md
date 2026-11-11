@@ -1,5 +1,29 @@
 # Agreed lean workflow improvements
 
+> Historical decisions below are not current execution policy. The user authorized removing added mode/approval, compiler-repair, exhaustive-file-list, forced pipeline and global serial restrictions on 2026-10-11. See `lean-workflows.md`. Explicit active-task limits remain binding; do not revive superseded ceremonies.
+
+## Product direction — human-guided software factory
+
+The goal is a lean software factory in which the user and agent define requirements, design, acceptance criteria and consequential decisions together before implementation. Once the work is understood and authorized, the workflow owns implementation, testing, ordinary in-scope repairs and review without routine handoffs or repeated approvals.
+
+The happy-path handoff is a project-appropriate, accessible way for the user to validate the actual candidate, with a concise checklist and honest limitations. For a running application, this normally means an agreed validation environment kept available for manual review. Automated checks support, but do not replace, the user's acceptance. If the review path is blocked, explain the blocker and recommend a viable next step.
+
+The user is the acceptance gate: acceptance, requested changes and hold must remain distinct. After explicit acceptance, the workflow should carry out any **previously agreed and explicitly authorized conditional** commit, push and deployment to specified targets, subject to project checks and unchanged candidate/conditions. Otherwise it waits for the needed authority; an ambiguous response is not acceptance. This is a direction, not a claim that the complete gate or release automation exists, nor authorization to modify active tasks or release anything. Keep mechanics proportionate and project-specific; avoid new ceremony for its own sake.
+
+### Claude, TAKT and Pi comparison
+
+The [visual development-cycle comparison](../../.agent-work/workflow-comparison/development-cycle.html) and its [source notes](../../.agent-work/workflow-comparison/source-notes.md) capture the inspected differences and suggested path toward this goal. These are retained local artifacts in ignored `.agent-work/`, not Git-tracked documents. The comparison found that TAKT's manual validation is conditional and its inspected generic release path reaches a PR, while Pi's new handoff guidance still needs a real-project trial and its acceptance-to-conditional-release flow remains unproven. Treat the Claude Code prompt extraction as third-party evidence, not an exact running-session prompt.
+
+## Current backlog reconciliation — 2026-10-13
+
+See [the current reconciliation and proposed small package](workflows/workflow-improvement-package-2026-10-13.md) for status across these historical decisions, the context-efficiency backlog and the Dikta retrospectives. Documentation/planning is authorized; the proposed package is not yet implementation-authorized.
+
+Current guidance already covers autonomous in-scope repairs, genuine regression proof, evidence reuse and actionable handoffs. October 12/13 real-use observations support retaining that direction, not reinstating historical Agreement/file/repair ceremonies below. The next proposed improvements are first-review test/evidence/doc alignment, precise dirty-candidate and original-transport resume examples, and bounded native retrieval fixtures. These are shared-workflow improvements; stack-specific test/signing/install mechanics belong in each repository. No per-project PACE variant or new configuration system is proposed.
+
+User refinement: no added ceremony. Shared defaults should remain minimal but rigorous; project-type procedures belong in the project's existing rules or task context. The linked proposition is narrowed accordingly: no universal readiness checklist, hash-manifest procedure, compatibility fixture suite or additional workflow gate. Prefer clarification or no change over duplicating existing principles.
+
+Idea exploration is partly addressed by the existing open DEFINE/brainstorming transition; a separate capability remains deferred pending an observed gap. Context Mode, compaction tuning, pi-flow and other larger additions are not bundled. Historical snapshot status and unmeasured cost claims remain explicitly unresolved rather than being silently marked complete.
+
 ## Current direction — minimalist real development (2026-10-09)
 
 The user approved simplifying the installed guidance after the Dikta Team trial stalled on document reading and speculative allowance accounting. The goal is Pi as useful as their Claude Code workflows, not a delivery framework for its own sake. New tasks default to 3–5 sentences, relevant project references and one compact approval/task record. Brief/Plan/Agreement are responsibilities, not mandatory separate files. No routine reading proofs, exhaustive identity inventories, snapshot suites, per-role minute pools or unrelated-app closure demands.
@@ -117,6 +141,10 @@ This section retains discussed possibilities without turning them into an approv
 - The repository README separately defers Jev and Hermes work. This release does not reopen those items.
 
 The historical alternatives and source comparisons remain available through session evidence and Munin. Choosing lean Brief/Plan/Agreement documents does not commit us to Scrum ceremonies, spec-as-source code generation, full product-spec maintenance, or routine ADRs.
+
+## Deferred improvement candidate — idea exploration before delivery
+
+Investigate whether the pinned `vendor/addy-agent-skills/skills/idea-refine/` material, or an existing installed brainstorming capability, can improve open project/feature discussion before delivery commitment. Preferred direction: treat it as the open end of DEFINE rather than create another mandatory workflow; when a direction becomes sufficiently understood, offer a proportionate short PLAN or Direct BUILD. Brainstorming must not automatically authorize implementation or impose a phase/document ceremony. This is a recorded candidate only: do not build, install, or search external integrations from this entry without a separate approved proposal.
 
 ## Evaluation
 

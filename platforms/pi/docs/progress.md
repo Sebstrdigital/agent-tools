@@ -27,16 +27,29 @@ cancelled and abandoned remain pending with explicit `[blocked] reason`,
 `[paused] reason`, `[cancelled] reason`, `[abandoned] reason` content. Keep at most
 one active row; zero is allowed when no work is active (blocked, paused, or finished). Worker completion never means acceptance. Children have no independent
 list. Default scratch lists need no Plan for trivial work; no automatic Plan
-parser, evidence gate or scheduler is added. Reconcile from the applicable Plan
-on resume/branch/reload before updating. Never remove unresolved rows merely to
+parser, evidence gate or scheduler is added. Before marking any milestone completed,
+validate its acceptance condition and inspect evidence for the actual candidate/environment,
+as required by [validated milestone completion](workflows/validated-completion.md).
+This includes setup milestones: review environments need a working normal user path,
+not setup success or a diagnostic bypass. Failed/blocked validation stays unfinished
+with a reason; use pending when blocked and in_progress while actively repairing.
+The tool description carries this rule but cannot mechanically prove evidence truth.
+Reconcile from the applicable Plan on resume/branch/reload before updating. Never remove unresolved rows merely to
 make the counter say done. `/todos` shows full retained text; `/todos next` finds
 the active/next pending row; `/todos clear` clears only the view cache.
 
 30-row cap; malformed rows drop/default with warnings. Inspect warnings and
 reconcile the Plan rather than silently losing scope. The ten-row window follows
-the active row. Content truncates after 44 UTF-16 units, so put labels first and
-use `/todos` for full reasons. Host Text wraps narrow/wide Unicode safely but the
-box is fixed width, not a responsive custom dashboard.
+the active row. The toolkit widget uses the available terminal width, aligns
+all borders using display columns, and wraps each item to at most three lines.
+An ellipsis marks further text; use `/todos` for full reasons. Very narrow views
+omit the frame to preserve text space. Layout is recalculated on resize.
+
+When every item is completed, the widget hides automatically without clearing
+its saved snapshot. `/todos` still shows the completed list. A new unfinished
+snapshot or branch restores the widget; pending/blocked/paused rows keep it
+visible. This presentation adapter lives in `extensions/lean-progress/widget.ts`;
+the pinned upstream controller and its eight integrity-checked files are unchanged.
 
 Snapshots replay current full branch on startup/tree. Compaction and summarized
 tree events send one hidden restore message on the next turn. Reload after

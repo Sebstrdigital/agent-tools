@@ -9,18 +9,19 @@ export interface RouteChoice {
   taskKind?: "lookup" | "analysis";
 }
 // Unbenchmarked candidates, not an automatic retry ladder. No parent inheritance.
-const TERRA = "openai/gpt-5.6-terra", SOL = "openai/gpt-5.6-sol";
+const LUNA = "openai/gpt-6-luna", TERRA = "openai/gpt-6.1-terra", SOL = "openai/gpt-6.1-sol";
+const SCOUT_LOOKUP = { start: [LUNA, "low"], strong: [TERRA, "medium"] } as const;
 const PROFILES = {
-  scout: { start: [TERRA, "low"], strong: [TERRA, "medium"] },
-  builder: { start: [SOL, "medium"], strong: [SOL, "high"] },
-  validator: { start: [TERRA, "low"], strong: [SOL, "medium"] },
-  reviewer: { start: [SOL, "medium"], strong: [SOL, "high"] },
+  scout: { start: [TERRA, "medium"], strong: [SOL, "medium"] },
+  builder: { start: [TERRA, "medium"], strong: [SOL, "high"] },
+  validator: { start: [TERRA, "medium"], strong: [SOL, "high"] },
+  reviewer: { start: [TERRA, "high"], strong: [SOL, "high"] },
 } as const;
 const narrow: Record<DeliveryRole, Record<string, readonly string[]>> = {
-  scout: { [TERRA]: ["low", "medium"] },
+  scout: { [LUNA]: ["off", "low"], [TERRA]: ["low", "medium"], [SOL]: ["low", "medium"] },
   builder: { [TERRA]: ["medium"], [SOL]: ["medium", "high"] },
-  validator: { [TERRA]: ["low"], [SOL]: ["medium"] },
-  reviewer: { [SOL]: ["medium", "high", "xhigh"] },
+  validator: { [TERRA]: ["medium"], [SOL]: ["medium", "high"] },
+  reviewer: { [TERRA]: ["high"], [SOL]: ["medium", "high", "xhigh"] },
 };
 
 /** Synchronous preflight against the host's authenticated availability snapshot.
@@ -36,7 +37,7 @@ export function resolveRoleRoute(role: DeliveryRole, choice: RouteChoice,
     if (choice[key] !== undefined && (typeof choice[key] !== "string" || !choice[key]?.trim())) throw new Error("Invalid routing " + key);
   }
   const profile = choice.profile ?? "start";
-  const defaults = PROFILES[role][profile];
+  const defaults = role === "scout" && choice.taskKind === "lookup" ? SCOUT_LOOKUP[profile] : PROFILES[role][profile];
   const model = choice.model ?? defaults[0];
   let thinking = choice.thinking ?? defaults[1];
   if (thinking === "none") thinking = "off";
