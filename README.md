@@ -13,8 +13,14 @@ This repository currently preserves the working copies of `claude-tools` and `pi
 | `tools/` | Harness-independent utilities |
 | `platforms/claude-code/` | Preserved Claude working copy |
 | `platforms/pi/` | Preserved Pi working copy |
+| `platforms/omp/` | OMP specialist definitions and proportional work-profile rule |
+| `sources/` | Partial, path-preserving source variants awaiting comparison and classification |
 
 The first 11 shared skills are available under `skills/productivity/`; see [shared skills](skills/README.md). `tools/` remains empty pending classification. The Pi preservation copy was refreshed from the source working tree, including uncommitted source changes; private and experimental evidence was excluded from publication. Original instructions and paths may still reference old locations: preservation is not proof of portability. See [migration status](docs/migration.md) for the source revisions and validation limits.
+
+The OMP work rule and agents are source for a local live trial, not a validated installer. The default OMP profile remains separate from `omp-work`; machine-specific settings and restoration instructions belong in the dotfiles repository.
+
+The source variants are not standalone installations: unchanged dependencies may remain in the platform trees. Their inclusion does not establish distribution rights or approve activation.
 
 ## Scope and design
 

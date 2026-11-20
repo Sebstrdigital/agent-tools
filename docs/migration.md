@@ -73,3 +73,16 @@ The user approved refreshing the Pi preservation copy from its current working t
 The refresh updated 45 and added 148 publishable Pi files, including supporting tests and vendor licenses. Previous tracked variants remain available at agent-tools commit `c7ddcc2`; the original repositories and live installations remain unchanged. The initial local manifest records the earlier snapshot, not the refreshed Pi tree. Historical and experimental evidence, logs, screenshots, drafts, retrospectives, trial documents and personal handover material were not published. Some imported documents may still reference excluded local evidence.
 
 The 193 refreshed files matched their corresponding source bytes. A targeted credential and personal-path pattern scan produced no confirmed findings; it is not a comprehensive privacy audit. The isolated cleanup-inventory unit tests passed (7 tests). No copied installer, live integration or cutover was run or validated.
+
+## Local source consolidation and OMP work profile
+
+On Linux, the user approved preserving reusable capabilities from the local agent repositories, backing up personal settings in `dotfiles`, and trying a proportional OMP work profile. Original repositories, historical variants and live session data remain in place; no installers or hooks were run.
+
+- `agentic-tools` at `137884490da84a7c106c0aec636835d4e0a96cd8`: compared with the existing Claude preservation copy; matching files were not duplicated.
+- `ai-engineering` at `53b41df7c80e6c97b88e7fbda71804c1bacdfc86`: six reusable files preserved under `sources/ai-engineering/`.
+- `claude-dot-files` at `4af04ca4dd179fe702145af20b77a9ec16ebca04`: 39 distinct capability and supporting files under `sources/claude-dot-files/`; identical files were not duplicated. Personal workflows and machine-specific settings were excluded.
+- `pi-toolkit` at `5bc3bb043b339827f1b275c1150dc423f75a74f5`: 43 differing source files and relevant vendor notices under `sources/pi-toolkit/`; the later `platforms/pi/` preservation copy was not overwritten. Historical handoffs, retrospectives and evidence were excluded.
+
+The 88 source-variant files were compared byte-for-byte with their source paths. These partial trees are not independently installable and may reference dependencies in the existing platform copies. No repository license was found for the `ai-engineering` or `claude-dot-files` inputs; inclusion is not permission to redistribute them. Filename and common credential-pattern checks are not a comprehensive privacy audit.
+
+`platforms/omp/` contains the nine locally available OMP agent definitions and a work-profile rule revised for proportional delegation. The live `omp-work` profile links to that rule; the original saved rule remains under `~/.omp/disabled-rules/`. Personal settings, a rule snapshot, launcher and restoration notes were added to the separate `dotfiles` repository. Credentials, databases, history and caches were not copied. Both launch paths were exercised; no installer, cross-platform restoration or specialist execution was validated.

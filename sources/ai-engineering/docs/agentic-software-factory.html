@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Agentic Software Factory</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: a routing sheet for a production line. Left rail lists the stations of the
+   document; the main column reads top to bottom, with the line diagram at full width. */
+:root {
+  --bg: #f1f4f3;
+  --surface: #f9fbfa;
+  --raised: #ffffff;
+  --ink: #17201e;
+  --muted: #566461;
+  --line: #d2dad7;
+  --line-strong: #a7b3af;
+  --agent: #1f4fc4;
+  --agent-soft: #e2e9fb;
+  --human: #a3450d;
+  --human-soft: #f8e8dd;
+  --auto: #55615e;
+  --auto-soft: #e5eae8;
+  --warn: #b3261e;
+  --warn-soft: #fbe5e2;
+  --code-bg: #e8edeb;
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101514; --surface: #151c1a; --raised: #1b2321; --ink: #e4ebe8; --muted: #98a6a2;
+    --line: #2a3432; --line-strong: #4a5754;
+    --agent: #8fb0ff; --agent-soft: #1b2a4d; --human: #f0a070; --human-soft: #3b2516;
+    --auto: #a3b0ac; --auto-soft: #232c2a; --warn: #ff8a7d; --warn-soft: #42201c; --code-bg: #1f2826;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101514; --surface: #151c1a; --raised: #1b2321; --ink: #e4ebe8; --muted: #98a6a2;
+  --line: #2a3432; --line-strong: #4a5754;
+  --agent: #8fb0ff; --agent-soft: #1b2a4d; --human: #f0a070; --human-soft: #3b2516;
+  --auto: #a3b0ac; --auto-soft: #232c2a; --warn: #ff8a7d; --warn-soft: #42201c; --code-bg: #1f2826;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16.5px; line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--agent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--agent); outline-offset: 2px; border-radius: 3px; }
+
+.page { max-width: 1280px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); padding-block: 44px 96px; }
+
+/* ---------- masthead ---------- */
+.mast { display: grid; gap: 18px; padding-bottom: 32px; border-bottom: 2px solid var(--ink); }
+.eyebrow { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-stretch: 82%; font-weight: 800; font-size: clamp(2.3rem, 6.2vw, 4.1rem); line-height: .98; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+.lede { font-size: 1.2rem; line-height: 1.5; max-width: 62ch; margin: 0; }
+.source { font-size: .9rem; color: var(--muted); max-width: 78ch; margin: 0; }
+
+/* ---------- frame ---------- */
+.frame { display: grid; gap: 40px; margin-top: 36px; }
+.rail { min-width: 0; }
+.rail-title { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .92rem; }
+.rail a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.rail a:hover { color: var(--agent); border-color: var(--agent); }
+.rail-tools { margin-top: 18px; }
+main { min-width: 0; display: grid; gap: 72px; }
+@media (min-width: 1020px) {
+  .frame { grid-template-columns: 176px minmax(0, 1fr); gap: 48px; }
+  .rail-inner { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); }
+  .rail ol { flex-direction: column; gap: 9px; }
+  .rail a { border-bottom: 0; }
+}
+
+/* ---------- sections ---------- */
+section { display: grid; gap: 20px; min-width: 0; scroll-margin-top: 24px; }
+section > * { min-width: 0; }
+h2 { font-family: var(--font-display); font-stretch: 85%; font-weight: 750; font-size: clamp(1.6rem, 3.6vw, 2.25rem); line-height: 1.08; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-stretch: 90%; font-weight: 700; font-size: 1.22rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+p, ul, ol { margin: 0; }
+.prose { display: grid; gap: 14px; max-width: 68ch; }
+.prose ul, .prose ol { padding-left: 1.25em; display: grid; gap: 6px; }
+blockquote { margin: 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--ink); font-size: 1.12rem; line-height: 1.45; max-width: 60ch; }
+blockquote footer { font-size: .85rem; color: var(--muted); margin-top: 6px; }
+code, pre { font-family: var(--font-mono); font-size: .86em; }
+:not(pre) > code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+.codewrap { overflow-x: auto; background: var(--code-bg); border-radius: 4px; }
+pre { margin: 0; padding: 14px 16px; line-height: 1.5; white-space: pre; }
+
+/* source tags */
+.ts, .sk { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .02em; white-space: nowrap; padding: 1px 6px; border-radius: 3px; text-decoration: none; vertical-align: 1px; }
+.ts { background: var(--auto-soft); color: var(--ink); border: 1px solid var(--line); }
+.ts:hover { border-color: var(--agent); color: var(--agent); }
+.sk { background: var(--agent-soft); color: var(--agent); border: 1px solid transparent; }
+
+/* short version */
+.short { counter-reset: s; list-style: none; padding: 0; display: grid; gap: 0; max-width: 72ch; border-top: 1px solid var(--line-strong); }
+.short li { counter-increment: s; display: grid; grid-template-columns: 2.2em minmax(0, 1fr); padding: 12px 0; border-bottom: 1px solid var(--line); }
+.short li::before { content: counter(s); font-family: var(--font-mono); font-size: .85rem; color: var(--muted); padding-top: 3px; }
+
+/* ---------- expandable details ---------- */
+.more { border-bottom: 1px solid var(--line-strong); max-width: 76ch; }
+.more details { border-top: 1px solid var(--line-strong); }
+.more summary { cursor: pointer; list-style: none; display: block; position: relative; padding: 13px 0 13px 1.4em; font-weight: 600; }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::before { content: "+"; position: absolute; left: 0; font-family: var(--font-mono); font-weight: 500; color: var(--agent); }
+.more summary .sk { margin-left: 6px; }
+.more details[open] > summary::before { content: "\2212"; }
+.more summary:hover { color: var(--agent); }
+.more .body { display: grid; gap: 12px; padding: 0 0 18px 1.4em; }
+.more .body > * { min-width: 0; }
+.more .body ul, .more .body ol { padding-left: 1.2em; display: grid; gap: 6px; }
+button.plain { font: inherit; font-size: .88rem; color: var(--ink); background: var(--raised); border: 1px solid var(--line-strong); border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+button.plain:hover { border-color: var(--agent); color: var(--agent); }
+
+/* ---------- production line ---------- */
+.linebox { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: clamp(14px, 2.4vw, 24px); display: grid; gap: 18px; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.steps button { font-family: var(--font-body); font-size: .88rem; font-weight: 500; color: var(--ink); background: var(--raised); border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 13px; cursor: pointer; }
+.steps button .num { font-family: var(--font-mono); font-size: .78rem; color: var(--muted); margin-right: 6px; }
+.steps button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.steps button[aria-selected="true"] .num { color: var(--bg); opacity: .7; }
+.track { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 4px; }
+.conn { flex: 0 0 18px; display: grid; place-items: center; color: var(--line-strong); font-family: var(--font-mono); font-size: 18px; }
+.conn::before { content: "\203A"; }
+.st { flex: 1 0 100px; min-width: 0; background: var(--raised); border: 1px solid var(--line); border-top: 4px solid var(--auto); border-radius: 4px; padding: 10px 11px 12px; display: grid; gap: 5px; align-content: start; }
+.st.human { border-top-color: var(--human); }
+.st.agent { border-top-color: var(--agent); }
+.st.both { border-top-color: var(--human); }
+.st .who { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--auto); }
+.st.human .who, .st.both .who { color: var(--human); }
+.st.agent .who { color: var(--agent); }
+.st .name { font-family: var(--font-display); font-stretch: 88%; font-weight: 700; font-size: 1rem; line-height: 1.15; }
+.st .time { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.st .desc { font-size: .8rem; line-height: 1.35; color: var(--muted); }
+.st .subs { list-style: none; padding: 0; margin: 2px 0 0; display: grid; gap: 3px; font-size: .8rem; }
+.st .subs li { background: var(--human-soft); padding: 2px 6px; border-radius: 3px; }
+.st .flag { justify-self: start; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; margin-top: 2px; }
+.st .flag.new { background: var(--agent-soft); color: var(--agent); }
+.st .flag.jam { background: var(--warn-soft); color: var(--warn); }
+.st.jam { border-color: var(--warn); border-top-color: var(--warn); }
+.st.gone { border-style: dashed; border-color: var(--warn); border-top-style: dashed; background: transparent; }
+.st.gone .name { text-decoration: line-through; text-decoration-color: var(--warn); }
+.loop { border: 1px solid var(--line-strong); border-top: 0; border-radius: 0 0 6px 6px; height: 16px; margin: -8px 8px 0; position: relative; }
+.loop span { position: absolute; left: 50%; top: 100%; transform: translate(-50%, -50%); background: var(--surface); padding: 0 10px; font-size: .78rem; color: var(--muted); white-space: nowrap; }
+.cap { display: grid; gap: 10px; max-width: 74ch; padding-top: 6px; }
+.cap h3 { font-size: 1.12rem; }
+.cap p { font-size: .97rem; }
+.stepnav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .8rem; color: var(--muted); margin-left: auto; }
+.legend i { display: inline-block; width: 14px; height: 4px; margin-right: 6px; vertical-align: middle; }
+.legend .lh i { background: var(--human); } .legend .la i { background: var(--agent); } .legend .lm i { background: var(--auto); } .legend .lj i { background: var(--warn); }
+@media (max-width: 640px) {
+  .track { flex-direction: column; overflow-x: visible; }
+  .st { flex: 0 0 auto; }
+  .conn { flex: 0 0 20px; }
+  .conn::before { content: "\2304"; }
+  .loop { display: none; }
+  .legend { margin-left: 0; }
+}
+
+/* ---------- gates ---------- */
+.gates { display: grid; gap: 0; border-top: 2px solid var(--ink); }
+.gate { display: grid; gap: 14px; padding: 26px 0 28px; border-bottom: 1px solid var(--line-strong); }
+.gate > * { min-width: 0; }
+@media (min-width: 760px) { .gate { grid-template-columns: 120px minmax(0, 1fr); column-gap: 28px; } .gate > :not(.gnum) { grid-column: 2; } .gate .gnum { grid-row: 1 / span 6; } }
+.gnum { font-family: var(--font-mono); font-size: .82rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.gnum b { display: block; font-family: var(--font-display); font-stretch: 80%; font-weight: 800; font-size: 3rem; line-height: 1; color: var(--ink); letter-spacing: 0; }
+.gate .q { font-size: 1.08rem; font-style: italic; max-width: 62ch; }
+.pairs { display: grid; gap: 14px 28px; max-width: 76ch; }
+@media (min-width: 620px) { .pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pairs h4 { font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.pairs ul { padding-left: 1.15em; display: grid; gap: 5px; font-size: .96rem; }
+
+/* ---------- figures ---------- */
+figure { margin: 0; display: grid; gap: 10px; }
+.figscroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 10px; }
+.figscroll svg { display: block; width: 100%; min-width: 600px; height: auto; color: var(--ink); font-family: var(--font-body); }
+figcaption { font-size: .88rem; color: var(--muted); max-width: 72ch; }
+.cell { fill: var(--auto-soft); stroke: var(--line-strong); }
+.cell-a { fill: var(--agent); stroke: var(--agent); }
+.cell-b { fill: var(--agent-soft); stroke: var(--agent); }
+.svg-muted { fill: var(--muted); }
+.svg-accent { fill: var(--agent); }
+.svg-warn { fill: var(--warn); }
+
+/* ---------- ladder ---------- */
+.ladder { list-style: none; padding: 0; display: grid; gap: 0; max-width: 76ch; border-top: 1px solid var(--line-strong); }
+.ladder li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 14px 0 14px 16px; border-bottom: 1px solid var(--line); border-left: 6px solid var(--agent); }
+.ladder li:nth-child(2) { border-left-width: 4px; } .ladder li:nth-child(3) { border-left-width: 2px; } .ladder li:nth-child(4) { border-left-width: 1px; border-left-style: dashed; }
+.ladder b { font-family: var(--font-display); font-stretch: 90%; font-size: 1.05rem; }
+.ladder span { font-size: .95rem; color: var(--muted); }
+
+/* ---------- two columns, table ---------- */
+.cols { display: grid; gap: 20px; }
+@media (min-width: 700px) { .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; } }
+.col { border-top: 4px solid var(--agent); padding-top: 12px; display: grid; gap: 10px; align-content: start; }
+.col.skip { border-top-color: var(--auto); }
+.col ul { padding-left: 1.15em; display: grid; gap: 6px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: .94rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--line-strong); }
+dl { margin: 0; display: grid; gap: 12px; max-width: 76ch; }
+dt { font-weight: 600; }
+dd { margin: 2px 0 0; color: var(--muted); font-size: .96rem; }
+.note { font-size: .9rem; color: var(--muted); max-width: 72ch; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<header class="mast">
+  <p class="eyebrow">Learning notes &middot; compiled 5 October 2026</p>
+  <h1>The Agentic Software Factory</h1>
+  <p class="lede">How the software production line changed once agents started writing the code, why removing people from it backfires, and the four-gate workflow Dex Horthy uses to keep code maintainable without giving the speed back.</p>
+  <p class="source">Drawn from <a href="https://www.youtube.com/watch?v=xgkjtF89-44">&ldquo;Ex-NASA dev reveals his Agentic Engineering Workflow&rdquo;</a> (David Ondrej Podcast, 7 August 2026, 58 minutes, guest Dex Horthy of HumanLayer) and from the <a href="https://gist.github.com/Maciejdziuba/88890d7e0eeefa5a8738bbe9fd5e20b8">Software Factory Playbook skill</a> handed out with the episode. A tag like <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=960s">&asymp;16 min</a> opens the video near that point. A <span class="sk">Skill</span> tag marks material that comes from the packaged skill and was not said in the video.</p>
+</header>
+
+<div class="frame">
+
+<nav class="rail" aria-label="Contents">
+  <div class="rail-inner">
+    <p class="rail-title">Contents</p>
+    <ol>
+      <li><a href="#short">The short version</a></li>
+      <li><a href="#line">The production line</a></li>
+      <li><a href="#lights">Why not lights off</a></li>
+      <li><a href="#gates">The four gates</a></li>
+      <li><a href="#pressure">Back pressure</a></li>
+      <li><a href="#context">Context engineering</a></li>
+      <li><a href="#bottleneck">The bottleneck</a></li>
+      <li><a href="#fit">When to use it</a></li>
+      <li><a href="#skill">The packaged skill</a></li>
+      <li><a href="#check">Questions to ask</a></li>
+      <li><a href="#terms">Terms</a></li>
+      <li><a href="#limits">Sources and limits</a></li>
+    </ol>
+    <div class="rail-tools"><button class="plain" id="toggle-all" type="button">Open all details</button></div>
+  </div>
+</nav>
+
+<main>
+
+<!-- ===================================================== -->
+<section id="short">
+  <h2>The short version</h2>
+  <ol class="short">
+    <li><span>Agents made building fast. Reviewing stayed slow. The slow part is now trust: knowing that what was built works today and will not slow you down next month.</span></li>
+    <li><span>A factory where nobody reads the code runs well until the first bug the agents cannot fix. Then you spend weeks in code nobody on the team has read.</span></li>
+    <li><span>Models are trained to make tests pass. Nothing in that training penalises a poor design, so maintainable code still needs a person in the loop.</span></li>
+    <li><span>Move that person to the front of the line. Settle the product, the architecture and the program design in short documents, before any code exists and while a change costs one sentence.</span></li>
+    <li><span>Have the agent build in thin end-to-end slices, so there is something to run and re-steer after every step.</span></li>
+    <li><span>Improve the station that limits delivery. Tuning the agent setup is fun and is rarely that station.</span></li>
+  </ol>
+</section>
+
+<!-- ===================================================== -->
+<section id="line">
+  <h2>The production line, one change at a time</h2>
+  <div class="prose">
+    <p>Dex describes software delivery as a factory line that loops: work comes off a list, gets built, checked and shipped, and what users do with it puts new work on the list. Step through the stages below to see which station changes hands at each stage and where the work piles up.</p>
+  </div>
+
+  <div class="linebox">
+    <div class="steps" id="steps" role="tablist" aria-label="Stages of the factory"></div>
+    <div class="track" id="track" role="tabpanel" aria-live="polite"></div>
+    <div class="loop" aria-hidden="true"><span>feedback, requests and incidents go back on the list</span></div>
+    <div class="cap" id="cap"></div>
+    <div class="stepnav">
+      <button class="plain" id="prev" type="button">Previous stage</button>
+      <button class="plain" id="next" type="button">Next stage</button>
+      <div class="legend">
+        <span class="lh"><i></i>Human</span>
+        <span class="la"><i></i>Agent</span>
+        <span class="lm"><i></i>Automated</span>
+        <span class="lj"><i></i>Work piles up here</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="lights">
+  <h2>Why you cannot switch the lights off</h2>
+  <blockquote>
+    They can solve problems really, really well, but they&rsquo;re not going to be able to write maintainable code without you in the loop helping.
+    <footer>Dex Horthy <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1320s">&asymp;22 min</a></footer>
+  </blockquote>
+  <div class="prose">
+    <p>A lights-off factory is one where no person reads the code. To get there you strengthen every other check: agents that test their own changes, automated review, regression tests, stricter CI, more linters. Dex&rsquo;s position is that this works for a while and then fails in a predictable way.</p>
+    <p>Sooner or later a bug appears that the agents cannot fix. You try your strongest prompts, you put three models on it together, and they keep shipping fixes for the wrong cause. Now a person has to go into a codebase nobody has read for months, and both understanding it and finding the fault take days or weeks. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=540s">&asymp;9 min</a></p>
+  </div>
+  <div class="more">
+    <details>
+      <summary>What happened at HumanLayer</summary>
+      <div class="body">
+        <p>Around July 2025 the team ran this way. They reviewed plans and collaborated on tickets, and stopped reading the code. Then a bug hit their desktop app that the agents could not resolve. For weeks the app was buggy and users were unhappy while the team read through code they had never looked at. They dropped the approach afterwards. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=600s">&asymp;10 min</a></p>
+        <p>Dex&rsquo;s estimate is that if you stop reading the code, this is more likely to happen to you than not, and more likely than models becoming capable enough to dig you out in time.</p>
+      </div>
+    </details>
+    <details>
+      <summary>Why models write code that passes and still rots</summary>
+      <div class="body">
+        <p>Dex looked into how coding models are trained to find out why this keeps happening. In outline: the model attempts a problem many times, each attempt is scored, and training makes the high-scoring attempts more likely. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1320s">&asymp;22 min</a></p>
+        <p>The score comes from tests. Do the new tests pass, and does everything that passed before still pass? A clumsy design scores exactly as well as a clean one. That is where habits like wrapping a parse call in a try/catch that only logs and re-throws come from, or type casts scattered around to quiet the compiler. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1500s">&asymp;25 min</a></p>
+        <p>Training needs an oracle, something that can say quickly whether an attempt was good. Tests answer in seconds. The cost of a bad architectural choice shows up weeks or months later, after many more changes, and there is no practical way to feed that back into a training run. In his words, &ldquo;maintainability has no fast oracle.&rdquo; <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1560s">&asymp;26 min</a></p>
+        <p>He adds that the labs are surely working on this and it may be solved. Until then, knowing why models are weak here tells you where your own attention is needed.</p>
+      </div>
+    </details>
+    <details>
+      <summary>What coding benchmarks reward, and what they miss</summary>
+      <div class="body">
+        <ul>
+          <li>A typical benchmark task is a small historical fix, often one or two hundred lines, graded by hidden tests. A model that scores 99% has shown it can solve problems. It has not shown it writes code you can stop reading. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1380s">&asymp;23 min</a></li>
+          <li>Benchmarks hand over the whole problem at the start. Real software is discovered as you go: ship, hear from users, ship again. Dex says no current benchmark feeds a model a series of features one at a time and scores whether the codebase stayed easy to change. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1560s">&asymp;26 min</a></li>
+          <li>He points to a newer benchmark from Cognition as a step in the right direction. It has a model compare the solution with the human one for equivalent behaviour, a judge that checks the patch against written quality rules, and a check that the tests the model wrote fail on the old code. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1620s">&asymp;27 min</a></li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>The host&rsquo;s objection: understand the logic, not the code</summary>
+      <div class="body">
+        <p>David Ondrej pushes back on the word &ldquo;code&rdquo;. His view is that what you must keep hold of is the logic: what the first five minutes of onboarding look like, what happens when someone cancels, what an endpoint does when it fires. If you know that, you may not need to read every line. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=660s">&asymp;11 min</a></p>
+        <p>Dex does not argue the point directly. He answers with the four stages in the next section, which are his way of keeping a person in touch with the product, the system and the code at once.</p>
+        <p>David also describes his own practice: small changes he trusts, such as a front-end tweak, go straight to production. When he is unsure he has a second frontier model review the change and tests more himself. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=420s">&asymp;7 min</a></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="gates">
+  <h2>The four gates</h2>
+  <div class="prose">
+    <p>The idea behind all four is leverage: a little time early, to raise the odds that what the agent produces needs few fixes before or after it merges. Two reasons make early the right place. Once hundreds of lines exist, the session is deep in its context window and already leaning the way the model first chose, so changing direction is expensive. A design conversation is small by comparison. Dex shows one that had read the requirements and settled many decisions at about 43,000 tokens, which is where the model reasons best. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1020s">&asymp;17 min</a></p>
+    <p>In the video these are four stages of alignment, and Dex says they need no particular tool. The packaged skill turns each one into a gate: a document written to disk that you approve before the next one starts. <span class="sk">Skill</span></p>
+  </div>
+
+  <div class="gates">
+
+    <div class="gate">
+      <div class="gnum">Gate <b>1</b></div>
+      <h3>Product</h3>
+      <p class="q">What user problem are we solving, and how will we know it worked?</p>
+      <div class="pairs">
+        <div><h4>You settle</h4>
+          <ul>
+            <li>The problem, in the user&rsquo;s words</li>
+            <li>One number that shows success, and how it is measured</li>
+            <li>The announcement: write the blog post before the feature</li>
+            <li>What each screen looks like, as plain HTML mockups</li>
+          </ul>
+        </div>
+        <div><h4>Kept out</h4>
+          <ul>
+            <li>Databases, schemas, endpoints, file names</li>
+            <li>Any architecture talk</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prose">
+        <p>Dex puts the cost at about twenty minutes of back-and-forth, and the return is output that does not need hand polishing afterwards. Writing the announcement first is a practice he credits to Amazon: if you cannot explain to users why it is valuable, reconsider building it. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=780s">&asymp;13 min</a></p>
+      </div>
+      <div class="more">
+        <details>
+          <summary>The document template <span class="sk">Skill</span></summary>
+          <div class="body">
+            <div class="codewrap"><pre># Product: &lt;feature name&gt;
+
+## Problem
+&lt;the user problem, in the end-user's words, not the developer's&gt;
+
+## Success metric
+&lt;one real number tied to the business (conversion, latency,
+ tickets, revenue) and how it's measured&gt;
+
+## Announcement: the blog post before the feature
+&lt;3-6 sentences announcing this feature to users. If you can't
+ write it, you're building the wrong thing.&gt;
+
+## Screens
+&lt;one line per mockup file in ./mockups/, or "no UI"&gt;</pre></div>
+            <p>Mockups are one plain HTML file per screen, with no framework and no build step. They are meant to be thrown away. Iterate until the answer is &ldquo;yes, that.&rdquo;</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="gate">
+      <div class="gnum">Gate <b>2</b></div>
+      <h3>Architecture</h3>
+      <p class="q">How does this fit into the system we already have?</p>
+      <div class="pairs">
+        <div><h4>You settle</h4>
+          <ul>
+            <li>Which services or modules it touches</li>
+            <li>New endpoints</li>
+            <li>New or changed tables, with outlines of the queries</li>
+            <li>The end-to-end flow on the main path</li>
+          </ul>
+        </div>
+        <div><h4>Who to agree with</h4>
+          <ul>
+            <li>Whoever would review the pull request</li>
+            <li>On a solo project, yourself, before the code exists</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prose">
+        <p>Dex says many people already work this way with models and are comfortable doing so. It is the stage after this one that gets skipped. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=900s">&asymp;15 min</a></p>
+      </div>
+      <div class="more">
+        <details>
+          <summary>The document template <span class="sk">Skill</span></summary>
+          <div class="body">
+            <div class="codewrap"><pre># Architecture: &lt;feature name&gt;
+
+## Fit
+&lt;which existing services/modules this touches, and how&gt;
+
+## Endpoints
+&lt;route + verb + purpose, one line each, or "none"&gt;
+
+## Data
+&lt;new or changed tables/collections, with outlines of the
+ queries that will hit them&gt;
+
+## Flow
+&lt;the end-to-end call order for the main path: what calls what&gt;
+
+## External
+&lt;third-party APIs, env var NAMES (never values), webhooks,
+ or "none"&gt;</pre></div>
+            <p>The skill adds one instruction of its own here: read the relevant existing code before writing the document, so the design is made against the real codebase.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="gate">
+      <div class="gnum">Gate <b>3</b></div>
+      <h3>Program design</h3>
+      <p class="q">Which decisions would the agent otherwise make silently, halfway through the build?</p>
+      <blockquote>
+        Before you let the agent go cook, there are decisions that it&rsquo;s going to make that you might not like.
+        <footer>Dex Horthy, on the step he says most people skip <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=960s">&asymp;16 min</a></footer>
+      </blockquote>
+      <div class="pairs">
+        <div><h4>You settle</h4>
+          <ul>
+            <li>Where each new or changed file lives</li>
+            <li>Types and method signatures, with no bodies</li>
+            <li>The call stack: what calls what</li>
+            <li>What the tests will assert</li>
+          </ul>
+        </div>
+        <div><h4>Why this form</h4>
+          <ul>
+            <li>Signatures in a code block can be judged right or wrong in seconds</li>
+            <li>&ldquo;Why did you put that file there?&rdquo; gets asked before the file exists</li>
+          </ul>
+        </div>
+      </div>
+      <div class="prose">
+        <p>Dex credits an engineer at Cloudflare with ending most of his plans the same way: here is what the tests will look like, and here is the call stack once it is built. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1020s">&asymp;17 min</a></p>
+      </div>
+      <div class="more">
+        <details>
+          <summary>What &ldquo;signatures without bodies&rdquo; looks like</summary>
+          <div class="body">
+            <p class="note">An illustration written for these notes. It is not from the video.</p>
+            <div class="codewrap"><pre>// invoices/export.ts   (new file, next to invoices/list.ts)
+
+type ExportRequest = {
+  accountId: string
+  from: Date
+  to: Date
+  format: "csv" | "pdf"
+}
+
+type ExportJob = {
+  id: string
+  status: "queued" | "running" | "done" | "failed"
+  downloadUrl?: string
+}
+
+function requestExport(req: ExportRequest): Promise&lt;ExportJob&gt;
+function getExportJob(id: string): Promise&lt;ExportJob | null&gt;</pre></div>
+            <p>A reader can object at once: should the job live in its own table, should the date range be capped, should PDF wait for a later slice? Each objection costs a sentence now.</p>
+          </div>
+        </details>
+        <details>
+          <summary>The document template <span class="sk">Skill</span></summary>
+          <div class="body">
+            <div class="codewrap"><pre># Program Design: &lt;feature name&gt;
+
+## Files
+&lt;every file created or changed, one line each on why it lives there&gt;
+
+## Types &amp; signatures
+&lt;code blocks defining the types and method signatures, NO
+ implementation bodies. A human should be able to read these
+ in seconds and say "right" or "wrong."&gt;
+
+## Call stack
+&lt;for each main flow: what calls what, top to bottom&gt;
+
+## Test plan
+&lt;test case names and what each one asserts, before any exist&gt;
+
+## Least confident decisions
+&lt;numbered list of the calls most worth challenging now, while
+ changing them is free&gt;</pre></div>
+            <p>The last heading is the skill&rsquo;s addition. In the video the related tip comes from David: after a change, ask the model which of its choices it is least sure of. Dex&rsquo;s reply is that program design does the same job before the model runs. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1020s">&asymp;17 min</a></p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="gate">
+      <div class="gnum">Gate <b>4</b></div>
+      <h3>Vertical slices</h3>
+      <p class="q">In what order do we build, so that something runs after every step?</p>
+      <div class="prose">
+        <p>Left alone, models build one layer at a time: all of the database, then the services, then the API, then the front end. Nothing can be tested along the way, and you end up on the far side of thousands of lines hoping they are right. Dex says he has never seen a model choose a different order without a person telling it to. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1140s">&asymp;19 min</a></p>
+      </div>
+
+      <figure>
+        <div class="figscroll">
+          <svg viewBox="0 0 720 268" role="img" aria-label="Two build orders compared. Layer by layer, nothing runs until the fourth phase. Slice by slice, the first slice already runs end to end.">
+            <text x="96" y="26" font-size="13" font-weight="600" fill="currentColor">Layer by layer</text>
+            <text x="96" y="43" font-size="11.5" class="svg-muted">the model's default</text>
+            <g font-size="12" fill="currentColor" text-anchor="end">
+              <text x="86" y="80">Screen</text><text x="86" y="118">API</text><text x="86" y="156">Logic</text><text x="86" y="194">Data</text>
+            </g>
+            <g>
+              <rect class="cell" x="96" y="60" width="184" height="32" rx="2"/>
+              <rect class="cell" x="96" y="98" width="184" height="32" rx="2"/>
+              <rect class="cell" x="96" y="136" width="184" height="32" rx="2"/>
+              <rect class="cell" x="96" y="174" width="184" height="32" rx="2"/>
+            </g>
+            <g font-size="11.5" fill="currentColor" text-anchor="middle">
+              <text x="188" y="80">phase 4</text><text x="188" y="118">phase 3</text><text x="188" y="156">phase 2</text><text x="188" y="194">phase 1</text>
+            </g>
+            <text x="96" y="232" font-size="12" font-weight="600" class="svg-warn">First runnable point: after phase 4</text>
+            <text x="96" y="249" font-size="11.5" class="svg-muted">Nothing to test or re-steer before then</text>
+
+            <line x1="360" y1="20" x2="360" y2="252" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="3 4"/>
+
+            <text x="466" y="26" font-size="13" font-weight="600" fill="currentColor">Slice by slice</text>
+            <text x="466" y="43" font-size="11.5" class="svg-muted">what Dex asks for</text>
+            <g font-size="12" fill="currentColor" text-anchor="end">
+              <text x="456" y="80">Screen</text><text x="456" y="118">API</text><text x="456" y="156">Logic</text><text x="456" y="194">Data</text>
+            </g>
+            <g>
+              <rect class="cell-a" x="466" y="60" width="42" height="146" rx="2"/>
+              <rect class="cell-b" x="512" y="60" width="42" height="146" rx="2"/>
+              <rect class="cell-b" x="558" y="60" width="42" height="146" rx="2"/>
+              <rect class="cell-b" x="604" y="60" width="42" height="146" rx="2"/>
+            </g>
+            <g stroke="currentColor" stroke-opacity=".35">
+              <line x1="466" y1="95" x2="646" y2="95"/><line x1="466" y1="133" x2="646" y2="133"/><line x1="466" y1="171" x2="646" y2="171"/>
+            </g>
+            <g font-size="11.5" text-anchor="middle" class="svg-muted">
+              <text x="487" y="220">1</text><text x="533" y="220">2</text><text x="579" y="220">3</text><text x="625" y="220">4</text>
+            </g>
+            <text x="466" y="240" font-size="12" font-weight="600" class="svg-accent">First runnable point: after slice 1</text>
+            <text x="466" y="257" font-size="11.5" class="svg-muted">Test and re-steer after every slice</text>
+          </svg>
+        </div>
+        <figcaption>Both orders produce the same finished system. Built layer by layer, the first thing you can run arrives at the very end. Built slice by slice, the first slice is thin and mostly mocked, but it runs from screen to data, so every later slice can be tested the moment it lands.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <p>This is the order Dex used before AI, and the one he now asks the model to follow: <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1200s">&asymp;20 min</a></p>
+        <ol>
+          <li>A mock API endpoint</li>
+          <li>A stubbed front end</li>
+          <li>The front end made right</li>
+          <li>Wiring down to the back end</li>
+          <li>The migration</li>
+          <li>Business logic</li>
+          <li>Error handling</li>
+        </ol>
+        <p>Get it working end to end first, then add logic, then add cases. After the first two steps you can already look at the code and decide whether you like where it is heading, and correct it while that is cheap. He credits Matt Pocock, who calls the first thin slice a tracer bullet.</p>
+      </div>
+      <div class="more">
+        <details>
+          <summary>Slice rules and the check after each slice <span class="sk">Skill</span></summary>
+          <div class="body">
+            <ul>
+              <li><b>Slice 1 is the tracer bullet.</b> A mocked or hard-coded endpoint and a stubbed screen (or a response you can fetch with curl), wired end to end. It does almost nothing, and it runs.</li>
+              <li><b>Slice 2</b> replaces the mocks with real logic for the single happy path.</li>
+              <li><b>Slice 3 onward:</b> one capability per slice, such as a business rule, error handling, an edge case or polish. Each ends in a working, testable state.</li>
+              <li><b>Not allowed:</b> building all of one layer before the next.</li>
+            </ul>
+            <p>After every slice the agent proves it works by running it and showing the result, ticks it off in the status file, and asks: &ldquo;Continue to slice N+1, or re-steer?&rdquo;</p>
+          </div>
+        </details>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="pressure">
+  <h2>Back pressure: give the agent something to push against</h2>
+  <div class="prose">
+    <p>Back pressure is Dex&rsquo;s word for feedback the agent gets from the thing it built. The more objective that feedback, the further you can let the agent run. From strongest to weakest: <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=780s">&asymp;13 min</a></p>
+  </div>
+  <ol class="ladder">
+    <li><b>A number tied to the business</b><span>Conversion on a page, revenue, sign-ups. The agent can try three variants, read the data each day and keep the winner. As David puts it: &ldquo;If you can tell it a measurable output, the agent will move mountains for you.&rdquo;</span></li>
+    <li><b>Deterministic checks</b><span>Tests, type checks, linters, CI, complexity limits. Same answer every time, in seconds.</span></li>
+    <li><b>A narrow yes-or-no judge</b><span>A model given written rules and a patch, asked only whether the rules were followed. Not deterministic, but steadier than an open review.</span></li>
+    <li><b>Open-ended review by another model</b><span>Catches small things and raises the floor. Weakest as a signal about design.</span></li>
+  </ol>
+  <div class="more">
+    <details>
+      <summary>A test that cannot fail tests nothing</summary>
+      <div class="body">
+        <p>Take the tests the agent wrote and run them against the code as it was before the change. If they pass there too, they do not test the change. Dex describes this as a check used in the Cognition benchmark, and notes that agents have been seen commenting out tests to get to green. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1740s">&asymp;29 min</a></p>
+        <p>The skill makes both into standing rules: never write a test that passes against the old code, and never comment out, skip or weaken a test to make it pass. <span class="sk">Skill</span></p>
+      </div>
+    </details>
+    <details>
+      <summary>Why a second model&rsquo;s review only goes so far</summary>
+      <div class="body">
+        <p>Dex&rsquo;s reasoning: if a model could reliably tell good code from bad, it would have written good code the first time, and the models reviewing each other came out of much the same training. Having one model review another&rsquo;s work does find real issues, and spending more tokens will probably catch all the small ones. It will not stand in for a person&rsquo;s judgement about design. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1800s">&asymp;30 min</a></p>
+        <p>He says plainly that he cannot prove this and that it is a shared impression among the engineers he talks to.</p>
+      </div>
+    </details>
+    <details>
+      <summary>What to invest in if you read less code</summary>
+      <div class="body">
+        <p>Reading less code only works if other checks take up the load. The list from the video: <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=480s">&asymp;8 min</a></p>
+        <ul>
+          <li>Let the agent test its changes live, in a browser or sandbox, and send a short recording when it is done</li>
+          <li>Improve automated code review, for example by running two different models and fixing what both find</li>
+          <li>Strengthen regression testing</li>
+          <li>Each time something fails, find the cause and make that failure impossible to repeat</li>
+          <li>Make CI checks stricter, add linters, monitor complexity</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>Staying in touch with the codebase</summary>
+      <div class="body">
+        <p>David&rsquo;s suggestion is to have the agent teach you as it works: quiz you, draw the change as an HTML visualisation, and slow down on purpose when you start to lose your grip. HumanLayer prototyped something similar and did not ship it. While the agent worked, you could open the session and answer multiple-choice questions, with diagrams, on how the code works today and what the new implementation changes. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=510s">&asymp;8 min</a></p>
+        <p>The skill has a lighter version: if you have not looked at code for a long stretch, the agent reminds you at a slice boundary. <span class="sk">Skill</span></p>
+      </div>
+    </details>
+    <details>
+      <summary>Sending incidents and support requests into the factory</summary>
+      <div class="body">
+        <p>When an alarm fires at night, an agent investigates and has a pull request waiting in the morning. Part of the support queue can be triaged the same way, so that some bugs go straight to an agent. David runs a smaller version: a model reviews every uptime incident and writes a short report on what happened and whether anything can be done, such as &ldquo;this was the provider&rdquo; or &ldquo;a migration is missing&rdquo;. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=240s">&asymp;4 min</a></p>
+        <p>Dex&rsquo;s point about scale: if an agent can handle even 30% of your work or your incidents on its own, that is already a large gain. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=390s">&asymp;6 min</a></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="context">
+  <h2>Context engineering</h2>
+  <div class="prose">
+    <p>Everything you do with a model comes down to what is in its context window. Dex&rsquo;s rule has three parts: nothing wrong in it, nothing missing from it, and as small as you can make it. The aim is the right tokens, and more of them is not better. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2220s">&asymp;37 min</a></p>
+    <p>He expects this to hold for as long as models are built on the current attention mechanism: the smaller and more specific the context, the better the result. What has changed is the floor. For an ordinary change he no longer thinks about every token, and he saves that care for hard problems. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2460s">&asymp;41 min</a></p>
+  </div>
+  <div class="more">
+    <details>
+      <summary>Put knowledge in the repository as files</summary>
+      <div class="body">
+        <p>David&rsquo;s habit on every project, even small ones: <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1980s">&asymp;33 min</a></p>
+        <ul>
+          <li><code>docs/adr/</code> holds decisions, written down explicitly. How pricing launches. That the API schema never changes, and a breaking change ships as <code>/v2</code>.</li>
+          <li><code>docs/external/</code> holds what lives outside the code: the names of environment variables (never their values), how the payment processor is set up, which email addresses are used for testing, where customers get in touch.</li>
+        </ul>
+        <p>People on a team carry this knowledge in their heads. A model does not, unless it is written where the model can find it. Dex adds the reason files work so well: reading, writing, editing and searching files is what these models are best at, so knowledge on disk is cheap for them to pick up. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2040s">&asymp;34 min</a></p>
+      </div>
+    </details>
+    <details>
+      <summary>Load context with code, not with instructions</summary>
+      <div class="body">
+        <p>Instructions such as &ldquo;turn on this server, then here is how you look up recent issues&rdquo; use up the model&rsquo;s attention while it is trying to work. If you always want something in context, fetch it with plain code. Dex&rsquo;s example is a hook that runs when a session starts and pulls in the last ten error reports. That costs processor time and no inference, which leaves the model&rsquo;s effort for reasoning. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2100s">&asymp;35 min</a></p>
+      </div>
+    </details>
+    <details>
+      <summary>The dumb zone, and when to start a fresh session</summary>
+      <div class="body">
+        <p>The name comes from a training session Dex ran for engineers new to AI coding. With the models of that time, once a session passed roughly half its context window (100,000 to 120,000 tokens) results got worse. His routine was to write everything decided so far into a document and start a new session from that document. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2520s">&asymp;42 min</a></p>
+        <p>He now calls this training wheels. He regularly runs sessions to 200,000 or 300,000 tokens, and automatic compaction has improved. What remains is the habit underneath: when a session is going badly, one thing to try is starting over and restating the problem.</p>
+        <p>A related effect he describes in earlier models: as the window filled they began to cut corners and rush, like a student who notices five minutes are left in an exam. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2640s">&asymp;44 min</a></p>
+        <p>The skill applies the older, stricter form. It writes all decisions into the documents at the end of every gate and every slice and tells you that is a safe point to start fresh. <span class="sk">Skill</span></p>
+      </div>
+    </details>
+    <details>
+      <summary>How tightly to steer</summary>
+      <div class="body">
+        <p>Tell the model how you want something done and you are more likely to get what you had in mind. Leave the how open and the range of outcomes widens in both directions: it may do it badly, and it may find a better way than you would have thought of. Dex treats this as a prompting choice, separate from context engineering. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2400s">&asymp;40 min</a></p>
+      </div>
+    </details>
+    <details>
+      <summary>Where the term comes from</summary>
+      <div class="body">
+        <p>Dex traces it to 12-Factor Agents, a set of principles for building agents that HumanLayer published in spring 2025. The factor that drew most attention was &ldquo;own your context window&rdquo;. He says the phrase became widespread a few months later, when Andrej Karpathy and Tobi L&uuml;tke began using it, and allows that several people may have arrived at it independently. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2160s">&asymp;36 min</a></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="bottleneck">
+  <h2>Work on the bottleneck</h2>
+  <blockquote>
+    There are inefficiencies that are not bottlenecks.
+    <footer>Dex Horthy <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2760s">&asymp;46 min</a></footer>
+  </blockquote>
+  <div class="prose">
+    <p>If code review is what limits delivery, adding more coding agents changes nothing. Work only piles up faster in front of review. What counts is value reaching users, measured across the whole line, and a faster station that is not the limiting one does not move that figure.</p>
+    <p>Dex applies this to &ldquo;token maxing&rdquo;, the urge to use up every bit of a subscription. He sees some value in pushing to find the limit and then advises pulling back to what the bottleneck can absorb. His office has a line for it: &ldquo;Stop playing with your coding agents and get back to work.&rdquo; Building the thing that builds the thing is enjoyable, and he admits he has been told more than once in his career to stop speeding up CI and ship the tickets. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2820s">&asymp;47 min</a></p>
+    <p>The question to ask of any improvement is whether it is the bottleneck. If it is not, live with it and put the effort where the constraint is.</p>
+  </div>
+  <div class="more">
+    <details>
+      <summary>The factory story behind it</summary>
+      <div class="body">
+        <p>The idea comes from <i>The Goal</i> by Eliyahu Goldratt, a novel about a manager trying to save a factory. (Dex places the book in the 1970s. It was published in 1984.) In the factories it describes, each machine had someone responsible for keeping it busy, because an idle machine looked like wasted money. Every station was tuned to run flat out. Stations work at different speeds, so one of them is always the slowest, and half-finished work stacked up in front of it, which is expensive to store. Making every station efficient did not make the factory deliver more. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2700s">&asymp;45 min</a></p>
+      </div>
+    </details>
+    <details>
+      <summary>The same point from the host</summary>
+      <div class="body">
+        <p>David&rsquo;s version: many people spend 80% of each day building tooling and 20% on their real work, and he does not want to be one of them. A setup that is slightly less efficient than someone else&rsquo;s is fine if the product gets built. He also notes that people have a dumb zone of their own. After three hours on a problem, a walk can show that the problem never mattered to the business. <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=2580s">&asymp;43 min</a></p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="fit">
+  <h2>When to use it, when to skip it</h2>
+  <div class="cols">
+    <div class="col">
+      <h3>Run the gates</h3>
+      <ul>
+        <li>People pay for the product and it has to be maintainable six months from now</li>
+        <li>You work in a team, where someone else will review the change (Dex mentions around five engineers and up)</li>
+        <li>Mistakes are expensive: regulated industries, fintech, public companies</li>
+        <li>The change touches several files, adds an endpoint, table or screen, or would produce a diff you would not want to review in one go (the skill puts this at roughly 100 lines) <span class="sk">Skill</span></li>
+      </ul>
+    </div>
+    <div class="col skip">
+      <h3>Skip them</h3>
+      <ul>
+        <li>You have not found product-market fit and need to put many things in front of customers quickly. Dex calls the full process &ldquo;probably overkill&rdquo; here</li>
+        <li>The code is a throwaway prototype <span class="sk">Skill</span></li>
+        <li>The change is trivial: a rename, a typo, a copy or style change, a small config edit <span class="sk">Skill</span></li>
+        <li>You have decided to move fast on this one and said so <span class="sk">Skill</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="note">Video references for this section: <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=960s">&asymp;16 min</a> <a class="ts" href="https://www.youtube.com/watch?v=xgkjtF89-44&amp;t=1860s">&asymp;31 min</a></p>
+</section>
+
+<!-- ===================================================== -->
+<section id="skill">
+  <h2>The packaged skill</h2>
+  <div class="prose">
+    <p>The episode comes with a free download, the Software Factory Playbook. It is a single skill file for coding agents such as Claude Code, published as a GitHub gist under the account Maciejdziuba. David says in the video that he packaged it. It is his team&rsquo;s write-up of Dex&rsquo;s method, and it adds procedure that the conversation does not cover.</p>
+    <p>The gist was last edited on 4 October 2026. These notes describe it as it stood on 5 October 2026.</p>
+  </div>
+  <div class="more">
+    <details open>
+      <summary>What the skill adds to what was said</summary>
+      <div class="body">
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>In the video</th><th>In the skill</th></tr></thead>
+            <tbody>
+              <tr><td>Four stages you work through with the model</td><td>Four gates. The agent stops at each one and asks, &ldquo;Approve Gate N, or what should change?&rdquo; No implementation code before the slice plan is approved</td></tr>
+              <tr><td>Plans and designs live as files on disk</td><td>A fixed folder per feature, <code>docs/plans/&lt;feature-slug&gt;/</code>, with one document per gate and a status file</td></tr>
+              <tr><td>Start a fresh session from a document when the context gets long. Dex now treats this as optional</td><td>Write everything into the documents at every gate and slice boundary. A new session must be able to continue from the documents alone</td></tr>
+              <tr><td>David&rsquo;s tip: afterwards, ask the model which choices it is unsure of</td><td>A &ldquo;Least confident decisions&rdquo; list inside the program design, before any code</td></tr>
+              <tr><td>Re-steer early, while it is cheap</td><td>A set question after every slice, and a backtracking rule: if a later gate shows an earlier decision was wrong, reopen that gate and have it approved again</td></tr>
+              <tr><td>No size threshold given</td><td>Use the gates for multi-file changes or diffs of roughly 100 lines and up. Skip them for trivial edits</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+    <details>
+      <summary>Files and the status sheet</summary>
+      <div class="body">
+        <div class="codewrap"><pre>docs/plans/&lt;feature-slug&gt;/
+  00-status.md          state file: gate approvals + slice checklist
+  01-product.md
+  mockups/              Gate 1 screen mockups, plain HTML, one per screen
+  02-architecture.md
+  03-program-design.md
+  04-slices.md</pre></div>
+        <div class="codewrap"><pre># Status: &lt;feature name&gt;
+
+- Gate 1 - Product: pending | in progress | APPROVED &lt;date&gt;
+- Gate 2 - Architecture: pending | in progress | APPROVED &lt;date&gt;
+- Gate 3 - Program Design: pending | in progress | APPROVED &lt;date&gt;
+- Gate 4 - Slice plan: pending | in progress | APPROVED &lt;date&gt;
+
+## Slices
+- [ ] Slice 1 - tracer bullet: &lt;one line&gt;
+- [ ] Slice 2 - &lt;one line&gt;
+
+## Notes for a fresh session
+&lt;anything decided in chat that a new session must know&gt;</pre></div>
+        <p>The status file is created first. At the start of any session, if one exists for the feature under discussion, the agent reads every document in the folder and continues from the first unapproved gate or the first unticked slice.</p>
+      </div>
+    </details>
+    <details>
+      <summary>The approval routine at each gate</summary>
+      <div class="body">
+        <ol>
+          <li>Write the gate document to disk.</li>
+          <li>Summarise it in five to ten bullet decisions and give the file path. Do not paste the whole document into the chat.</li>
+          <li>Ask: &ldquo;Approve Gate N, or what should change?&rdquo;</li>
+          <li>Only a clear yes counts as approval. Anything else means revise and ask again.</li>
+          <li>On approval, mark the gate in the status file and move on.</li>
+          <li>If later work shows an earlier decision was wrong, stop, update the earlier document, set that gate back to in progress and get it approved again.</li>
+        </ol>
+      </div>
+    </details>
+    <details>
+      <summary>Standing rules while the workflow runs</summary>
+      <div class="body">
+        <ul>
+          <li><b>Compact at every boundary.</b> Nothing important may exist only in the chat.</li>
+          <li><b>Keep diffs reviewable.</b> Small slices, and a reminder to look at the code if you have not for a while.</li>
+          <li><b>Real tests only.</b> No test that passes against the old code. No test weakened to get to green.</li>
+          <li><b>Optional:</b> when a decision will outlive the feature, record it in <code>docs/adr/</code>. Old records are superseded, never rewritten. Facts about things outside the repository go in <code>docs/external/</code>.</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ===================================================== -->
+<section id="check">
+  <h2>Questions to ask of your own workflow</h2>
+  <p class="note">This list was added while compiling these notes. It restates the ideas above as questions and is not from the video or the skill.</p>
+  <ol class="short">
+    <li><span>Where are file locations, type signatures and the call stack decided: before the agent starts, or by the agent as it goes?</span></li>
+    <li><span>Is work ordered so that a thin end-to-end version runs first, or layer by layer?</span></li>
+    <li><span>After the first slice, is there a point where a person can look and change direction?</span></li>
+    <li><span>At which points does a person read code, as opposed to plans and summaries?</span></li>
+    <li><span>Does each piece of work have a measurable, deterministic signal that says it is done?</span></li>
+    <li><span>Is anything checking that new tests fail against the old code?</span></li>
+    <li><span>When something goes wrong, does it become a permanent check?</span></li>
+    <li><span>Do decisions, and facts about things outside the repository, have a home on disk?</span></li>
+    <li><span>Which context is loaded by code, and which does the model have to be told to fetch?</span></li>
+    <li><span>What limits delivery right now, and how do you know?</span></li>
+  </ol>
+</section>
+
+<!-- ===================================================== -->
+<section id="terms">
+  <h2>Terms</h2>
+  <dl>
+    <div><dt>Software factory</dt><dd>The whole loop that turns a list of work into running software and feeds what users do back onto the list. Agentic when agents staff some of the stations.</dd></div>
+    <div><dt>Lights-off factory</dt><dd>A factory where no person reads the code. Borrowed from manufacturing plants that run without staff, and so without lighting.</dd></div>
+    <div><dt>Leverage</dt><dd>Dex&rsquo;s word for spending a little time early to save a lot later.</dd></div>
+    <div><dt>Program design</dt><dd>The level below architecture: file locations, types, method signatures, call stack and test plan, agreed before implementation.</dd></div>
+    <div><dt>Vertical slice, tracer bullet</dt><dd>A thin piece of a feature that runs from screen to data. The tracer bullet is the first one, mostly mocked, built to prove the path works.</dd></div>
+    <div><dt>Back pressure</dt><dd>Feedback from what was built that pushes back on the agent: a metric, a failing test, a linter.</dd></div>
+    <div><dt>Oracle</dt><dd>In model training, whatever can say quickly whether an attempt was correct. Tests are one. Maintainability does not have one.</dd></div>
+    <div><dt>Context window</dt><dd>Everything the model can see at once: instructions, files it has read, the conversation so far.</dd></div>
+    <div><dt>Dumb zone</dt><dd>Dex&rsquo;s name for the later part of a long session, where results get worse. His original rule of thumb was about half the window.</dd></div>
+    <div><dt>Token maxing</dt><dd>Using as much model capacity as possible for its own sake.</dd></div>
+    <div><dt>ADR</dt><dd>Architecture decision record. A short file stating one decision, its context and its consequences.</dd></div>
+  </dl>
+</section>
+
+<!-- ===================================================== -->
+<section id="limits">
+  <h2>Sources and limits</h2>
+  <div class="prose">
+    <ul>
+      <li><b>The transcript is YouTube&rsquo;s automatic captioning.</b> It has no speaker labels, so who said what was worked out from context. Quotations are lightly cleaned of filler words. Time tags are accurate to the minute.</li>
+      <li><b>Some names are uncertain.</b> The captions garble several. The Cloudflare engineer Dex credits, and the author of the &ldquo;least confident choices&rdquo; tip David cites, could not be confirmed from the captions and are left unnamed here.</li>
+      <li><b>Screen shares are not captured.</b> Dex shows a requirements document, a design session, a diagram of slices, benchmark pages and the 12-Factor Agents page. Only what was said about them is reflected here.</li>
+      <li><b>The last ten minutes are left out.</b> They cover strategy games, competing with the AI labs and how the public sees AI, with no workflow content.</li>
+      <li><b>Claims are reported, not verified.</b> Statements about model training, benchmarks and other companies are Dex&rsquo;s and David&rsquo;s as given in the conversation.</li>
+    </ul>
+    <p>Sources: <a href="https://www.youtube.com/watch?v=xgkjtF89-44">the episode on YouTube</a> &middot; <a href="https://gist.github.com/Maciejdziuba/88890d7e0eeefa5a8738bbe9fd5e20b8">the Software Factory Playbook gist</a> &middot; <a href="https://www.humanlayer.com/">HumanLayer</a></p>
+  </div>
+</section>
+
+</main>
+</div>
+</div>
+
+<script>
+(function () {
+  var V = "https://www.youtube.com/watch?v=xgkjtF89-44&t=";
+  function ts(min) { return '<a class="ts" href="' + V + (min * 60) + 's">≈' + min + ' min</a>'; }
+
+  var WHO = { human: "Human", agent: "Agent", auto: "Automated", both: "Human + agent" };
+
+  var list   = { n: "To-do list", who: "human", d: "An issue tracker such as Jira or Linear" };
+  var ci     = { n: "Pull request and CI/CD", who: "auto", t: "minutes" };
+  var prod   = { n: "Production", who: "auto" };
+
+  var STEPS = [
+    {
+      tab: "2022: people",
+      title: "People at every station",
+      text: "A team puts work on a list. Someone builds it, opens a pull request, and CI runs. A colleague reviews the code by hand, and if something is wrong it loops back. It ships, users complain or ask for more, and monitoring wakes an engineer at three in the morning when it breaks. Teams had already learned to meet before building: an hour of agreement up front saved many hours of review and rework. " + ts(1),
+      st: [
+        list,
+        { n: "Build", who: "human", t: "hours to days" },
+        ci,
+        { n: "Code review", who: "human", t: "hours to days" },
+        prod,
+        { n: "Users and monitoring", who: "human", d: "Feedback, requests, and a pager at 3 a.m." }
+      ]
+    },
+    {
+      tab: "An agent builds",
+      title: "An agent takes over the build",
+      text: "This is the first station to change, and most of the others stay as they were. Dex names Stripe and Ramp among the companies with an internal system that hands every item on the list to an agent. Building now takes minutes or hours. Review still takes hours or days, so finished work queues up in front of it. " + ts(2),
+      st: [
+        list,
+        { n: "Build", who: "agent", t: "minutes to hours", isNew: true },
+        ci,
+        { n: "Code review", who: "human", t: "hours to days", jam: true },
+        prod,
+        { n: "Users and monitoring", who: "human", d: "Feedback, requests, and a pager at 3 a.m." }
+      ]
+    },
+    {
+      tab: "Agents review and test",
+      title: "Agents review and test as well",
+      text: "Automated review catches the small problems. Agents open the app in a browser and click through it. Running two different models over a change and fixing what both report raises confidence further. All of this speeds the line up, and the limit that remains is trust: if you want to read the code that matters, that reading is still the slowest station. " + ts(3),
+      st: [
+        list,
+        { n: "Build", who: "agent", t: "minutes to hours" },
+        ci,
+        { n: "Agent review and browser testing", who: "agent", t: "minutes", isNew: true },
+        { n: "Reading the code that matters", who: "human", t: "hours to days", jam: true },
+        prod,
+        { n: "Users and monitoring", who: "human", d: "Feedback, requests, and a pager at 3 a.m." }
+      ]
+    },
+    {
+      tab: "Incidents feed in",
+      title: "Incidents and requests go straight to an agent",
+      text: "“When the alarm goes off at 3 a.m., I don’t wake up to an alert, I wake up to a pull request.” Part of the support queue can be routed the same way. The human job becomes asking for features, deciding strategy, and getting through review as quickly as possible. " + ts(4),
+      st: [
+        list,
+        { n: "Build", who: "agent", t: "minutes to hours" },
+        ci,
+        { n: "Agent review and browser testing", who: "agent", t: "minutes" },
+        { n: "Reading the code that matters", who: "human", t: "hours to days", jam: true },
+        prod,
+        { n: "Users and monitoring", who: "agent", d: "An alarm becomes a pull request. Some support requests go straight in", isNew: true }
+      ]
+    },
+    {
+      tab: "Lights off",
+      title: "Lights off: nobody reads the code",
+      text: "The tempting next move is to remove the slowest station. To make that safe you pour effort into every other check, and then your only job is thinking up features. Dex’s team ran this way in 2025 and gave it up. It works until a bug arrives that the agents cannot fix, in code no person has read. The next section covers why. " + ts(7),
+      st: [
+        list,
+        { n: "Build", who: "agent", t: "minutes to hours" },
+        ci,
+        { n: "Agent review and browser testing", who: "agent", t: "minutes" },
+        { n: "Reading the code", who: "human", gone: true, d: "Removed. Nobody on the team knows the codebase any more" },
+        prod,
+        { n: "Users and monitoring", who: "agent", d: "An alarm becomes a pull request" }
+      ]
+    },
+    {
+      tab: "Design first",
+      title: "Design first: people decide early, agents build in slices",
+      text: "This is Dex’s answer. The human station moves to the front of the line, where a decision is a sentence in a document and costs almost nothing to change. The agent then builds one thin slice at a time, and each slice is run and checked before the next begins. Review at the end is still done by a person, and it is lighter, because the reviewer agreed to the design and has watched each slice work. " + ts(16),
+      st: [
+        list,
+        { n: "Four design gates", who: "both", d: "Short documents, agreed before any code", subs: ["1 Product", "2 Architecture", "3 Program design", "4 Slice plan"], isNew: true },
+        { n: "Build one slice", who: "agent", t: "minutes to hours", isNew: true },
+        { n: "Run it, then re-steer", who: "human", d: "After every slice, then back for the next", isNew: true },
+        { n: "CI and agent review", who: "agent", t: "minutes" },
+        { n: "Code review", who: "human", d: "Lighter: the design was agreed up front" },
+        prod,
+        { n: "Users and monitoring", who: "agent", d: "An alarm becomes a pull request" }
+      ]
+    }
+  ];
+
+  var stepsEl = document.getElementById("steps");
+  var track = document.getElementById("track");
+  var cap = document.getElementById("cap");
+  var prev = document.getElementById("prev");
+  var next = document.getElementById("next");
+  var current = 0;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  STEPS.forEach(function (s, i) {
+    var b = el("button");
+    b.type = "button";
+    b.id = "step-" + i;
+    b.setAttribute("role", "tab");
+    b.appendChild(el("span", "num", String(i + 1)));
+    b.appendChild(document.createTextNode(s.tab));
+    b.addEventListener("click", function () { show(i); });
+    stepsEl.appendChild(b);
+  });
+
+  function show(i) {
+    current = i;
+    var s = STEPS[i];
+    Array.prototype.forEach.call(stepsEl.children, function (b, k) {
+      b.setAttribute("aria-selected", k === i ? "true" : "false");
+    });
+    track.textContent = "";
+    s.st.forEach(function (st, k) {
+      if (k > 0) track.appendChild(el("div", "conn"));
+      var c = el("div", "st " + st.who + (st.jam ? " jam" : "") + (st.gone ? " gone" : ""));
+      c.appendChild(el("div", "who", st.gone ? "Was human" : WHO[st.who]));
+      c.appendChild(el("div", "name", st.n));
+      if (st.t) c.appendChild(el("div", "time", st.t));
+      if (st.d) c.appendChild(el("div", "desc", st.d));
+      if (st.subs) {
+        var ul = el("ul", "subs");
+        st.subs.forEach(function (x) { ul.appendChild(el("li", null, x)); });
+        c.appendChild(ul);
+      }
+      if (st.jam) c.appendChild(el("div", "flag jam", "Work piles up"));
+      if (st.gone) c.appendChild(el("div", "flag jam", "Breaks down"));
+      if (st.isNew) c.appendChild(el("div", "flag new", "Changed here"));
+      track.appendChild(c);
+    });
+    cap.innerHTML = "";
+    cap.appendChild(el("h3", null, s.title));
+    var p = el("p");
+    p.innerHTML = s.text;
+    cap.appendChild(p);
+    prev.disabled = i === 0;
+    next.disabled = i === STEPS.length - 1;
+  }
+  prev.addEventListener("click", function () { if (current > 0) show(current - 1); });
+  next.addEventListener("click", function () { if (current < STEPS.length - 1) show(current + 1); });
+  show(0);
+
+  var toggle = document.getElementById("toggle-all");
+  var opened = false;
+  toggle.addEventListener("click", function () {
+    opened = !opened;
+    Array.prototype.forEach.call(document.querySelectorAll(".more details"), function (d) { d.open = opened; });
+    toggle.textContent = opened ? "Close all details" : "Open all details";
+  });
+})();
+</script>
+</body>
+</html>
