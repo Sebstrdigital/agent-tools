@@ -1,0 +1,6 @@
+; Experiment only: not a comprehensive security policy or an OMP integration.
+(version 1)
+(allow default)
+(deny file-write*)
+(allow file-write* (literal "/dev/null"))
+(deny network*)

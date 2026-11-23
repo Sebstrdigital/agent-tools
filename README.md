@@ -4,7 +4,7 @@ Shared home for agent skills, reference material, portable utilities, and harnes
 
 ## Migration status
 
-This repository currently preserves the working copies of `claude-tools` and `pi-toolkit`. The originals and live installations remain authoritative until the reorganized replacements have been validated and an explicit cutover is approved.
+This repository preserves working-tree snapshots of `claude-tools` and `pi-toolkit`, alongside later source variants and OMP integrations. Preservation is not functional migration acceptance; live activation and cutover require explicit approval. See the migration record for historical source state and approved trials.
 
 | Path | Purpose |
 | --- | --- |
@@ -13,12 +13,12 @@ This repository currently preserves the working copies of `claude-tools` and `pi
 | `tools/` | Harness-independent utilities |
 | `platforms/claude-code/` | Preserved Claude working copy |
 | `platforms/pi/` | Preserved Pi working copy |
-| `platforms/omp/` | OMP specialist definitions and proportional work-profile rule |
+| `platforms/omp/` | OMP profiles, proportional workflow, and preserved local installer and trial candidates |
 | `sources/` | Partial, path-preserving source variants awaiting comparison and classification |
 
 The first 11 shared skills are available under `skills/productivity/`; see [shared skills](skills/README.md). `tools/` remains empty pending classification. The Pi preservation copy was refreshed from the source working tree, including uncommitted source changes; private and experimental evidence was excluded from publication. Original instructions and paths may still reference old locations: preservation is not proof of portability. See [migration status](docs/migration.md) for the source revisions and validation limits.
 
-The OMP work rule and agents are source for a local live trial, not a validated installer. The default OMP profile remains separate from `omp-work`; machine-specific settings and restoration instructions belong in the dotfiles repository.
+The canonical OMP rule now uses proportional delegation. The earlier local workflow, orchestrator-first candidate, installer, experiments, and trial history are preserved; see [OMP integration](platforms/omp/README.md). The user approved switching the default profile to the proportional rule, but repository updates alone do not install or switch a profile. Machine-specific configuration is managed separately; the Linux `omp-work` and local default-profile trial histories are recorded in [migration status](docs/migration.md).
 
 The source variants are not standalone installations: unchanged dependencies may remain in the platform trees. Their inclusion does not establish distribution rights or approve activation.
 
@@ -28,12 +28,12 @@ Maintain portable capabilities once while allowing harness-specific execution. A
 
 ## Safety and installation
 
-Do not run the copied installers or point live installations at this repository yet. Pi files may have symlink-aware installation behavior; isolation must be established before testing. Existing local settings and advisory state were preserved, not activated. See [migration status](docs/migration.md). The detailed copy verification manifest is retained locally at `docs/migration-copy-manifest.json` and is not published.
+Do not run the preserved Claude or Pi installers or repoint live installations without explicit approval. Pi files may have symlink-aware installation behavior; isolation must be established before testing. The initial copy preserved settings and advisory state without activating them. The separate local OMP installer links an explicitly selected OMP skill, supported specialist, or workflow without replacing existing paths; live use requires approval for that capability. See [migration status](docs/migration.md). The detailed copy verification manifest is retained locally at `docs/migration-copy-manifest.json` and is not published.
 
-The initial copy did not install or activate anything. The approved first publication contains shared skills and platform source, not personal settings or historical trial workspaces. Publication does not mean the new installers or live harness behavior have been validated.
+The initial copy did not install or activate anything. Publication of shared skills and platform source did not validate live behavior. Subsequent isolated OMP checks and approved live trials have limited, explicitly recorded coverage; they do not validate every installer path, cross-platform restoration, or automatic delegation.
 
 ## Development and migration
 
-Keep shared skill resources with their skill. Do not run platform installers against your real home directory during migration. The originals remain in place until an explicitly approved cutover.
+Keep shared skill resources with their skill. Use isolated destinations when validating installers. Preserve unique local variants and trial evidence, and record approved cutovers separately from source consolidation.
 
 Historical evidence, external reference clones, personal configuration, and the detailed preservation manifest remain local. Their exclusion from Git does not delete the preservation copies. See `docs/migration.md` for the scope and remaining validation.
