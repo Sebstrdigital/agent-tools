@@ -86,3 +86,7 @@ On Linux, the user approved preserving reusable capabilities from the local agen
 The 88 source-variant files were compared byte-for-byte with their source paths. These partial trees are not independently installable and may reference dependencies in the existing platform copies. No repository license was found for the `ai-engineering` or `claude-dot-files` inputs; inclusion is not permission to redistribute them. Filename and common credential-pattern checks are not a comprehensive privacy audit.
 
 `platforms/omp/` contains the nine locally available OMP agent definitions and a work-profile rule revised for proportional delegation. The live `omp-work` profile links to that rule; the original saved rule remains under `~/.omp/disabled-rules/`. Personal settings, a rule snapshot, launcher and restoration notes were added to the separate `dotfiles` repository. Credentials, databases, history and caches were not copied. Both launch paths were exercised; no installer, cross-platform restoration or specialist execution was validated.
+
+## Mobile UI skill source
+
+Added the shared `mobile-ui` skill and its React Native/Expo reference, with conditional stack routing and platform guidance. The OMP frontend specialist points to it when available. On macOS, the user approved linking this skill into the `omp-work` profile; the frontend agent was already linked to this repository. OMP's skill catalog discovered it from the SimplyBRF wrapper. This is a local profile link, not a portable installer, package registry publication, or a general cutover.
