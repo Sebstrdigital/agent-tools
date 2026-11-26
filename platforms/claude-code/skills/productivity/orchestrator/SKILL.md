@@ -23,10 +23,11 @@ Workers' job: edit files, run commands, gather evidence, report back.
 | Agent | Model | Use for |
 |-------|-------|---------|
 | `scout` | sonnet | read-only recon: codebase investigation, tracing, external repo/doc surveys. Cannot write files — ask it to return content. |
-| `builder` | sonnet | standard implementation: stories, tests, ordinary refactors with clear DoD |
+| `builder` | opus | standard implementation: stories, tests, ordinary refactors with clear DoD |
 | `heavy` | opus | hard problems: gnarly debugging, cross-cutting refactors, security-sensitive code, failed builder attempts |
 | `grunt` | haiku | mechanical: renames, doc syncs, sweeps, test-suite runs, exact git/shell sequences |
 | `skeptic` | opus | adversarial review of builder/heavy diffs before acceptance (read-only) |
+| `principal` | fable | hardest judgment calls: scope/trade-off decisions, conflicting requirements, architecture choices, risk assessment, independent second opinions (read-only by default) |
 | self | — | architecture only: decomposition, design decisions, reviewing reports, escalations, user-facing synthesis |
 
 Spawn via `subagent_type: "<agent name>"` (Agent tool) or `agentType: "<agent name>"`
