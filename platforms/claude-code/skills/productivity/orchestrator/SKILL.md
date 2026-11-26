@@ -28,6 +28,7 @@ Workers' job: edit files, run commands, gather evidence, report back.
 | `builder` | sonnet / high | mid | standard implementation: stories, tests, ordinary refactors with clear DoD |
 | `skeptic` | sonnet / high | reviewer | adversarial review of builder/heavy diffs before acceptance (read-only) |
 | `scout` | sonnet / medium | junior+ | read-only recon: codebase investigation, tracing, external repo/doc surveys. Cannot write files — ask it to return content. |
+| `general-purpose` | opus / medium | generalist | anything no roster row fits — research, mixed multi-step tasks |
 | `grunt` | haiku | junior | mechanical: renames, doc syncs, sweeps, test-suite runs, exact git/shell sequences |
 
 Spawn via `subagent_type: "<agent name>"` (Agent tool) or `agentType: "<agent name>"`
@@ -35,10 +36,11 @@ Spawn via `subagent_type: "<agent name>"` (Agent tool) or `agentType: "<agent na
 
 ## Spawn budget (hard)
 
-- Named roster agents only. Never spawn bare `general-purpose` without an
-  explicit `model` — it inherits the main model (Opus). If a named agent isn't
-  loaded (definitions load at session start), fall back to `general-purpose`
-  with the `model` of the matching roster row.
+- Prefer named roster agents. `general-purpose` is pinned to opus / medium by
+  its own definition (`~/.claude/agents/general-purpose.md`); use it only for
+  tasks no roster row fits, and never pass `model: opus` on top of a roster
+  agent. Bulk implementation goes through takt (see the takt section of the
+  global CLAUDE.md), not through a fan-out of `general-purpose` workers.
 - Use as few workers as can complete the task well. Parallelize only genuinely
   independent work; one worker per independent unit, not one per file.
 - At most 10 subagents in flight per session (enforced by
