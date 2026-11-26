@@ -1,6 +1,6 @@
 ---
 source_id: seb-claude-tools
-version: 2.0.0
+version: 2.1.0
 name: orchestrator
 description: Senior-architect delegation mode — the main model decomposes work, routes it to the named worker roster (scout/builder/heavy/grunt/skeptic), and gates acceptance on evidence. Use for any non-trivial in-session task (3+ steps, multiple files, investigation + implementation). For deterministic fan-out (many items, loops, adversarial verify) hand the mechanics to the Workflow tool and keep this skill's roster and gates. Skip for trivial edits and single-question answers.
 ---
@@ -20,19 +20,33 @@ Workers' job: edit files, run commands, gather evidence, report back.
 
 ## The roster (named agents in ~/.claude/agents/)
 
-| Agent | Model | Use for |
-|-------|-------|---------|
-| `scout` | sonnet | read-only recon: codebase investigation, tracing, external repo/doc surveys. Cannot write files — ask it to return content. |
-| `builder` | opus | standard implementation: stories, tests, ordinary refactors with clear DoD |
-| `heavy` | opus | hard problems: gnarly debugging, cross-cutting refactors, security-sensitive code, failed builder attempts |
-| `grunt` | haiku | mechanical: renames, doc syncs, sweeps, test-suite runs, exact git/shell sequences |
-| `skeptic` | opus | adversarial review of builder/heavy diffs before acceptance (read-only) |
-| `principal` | fable | hardest judgment calls: scope/trade-off decisions, conflicting requirements, architecture choices, risk assessment, independent second opinions (read-only by default) |
-| self | — | architecture only: decomposition, design decisions, reviewing reports, escalations, user-facing synthesis |
+| Agent | Model / effort | Team role | Use for |
+|-------|----------------|-----------|---------|
+| self | opus / medium | architect | architecture only: decomposition, design decisions, reviewing reports, escalations, user-facing synthesis |
+| `principal` | fable | architect (rare) | hardest judgment calls: scope/trade-off decisions, conflicting requirements, architecture choices, risk assessment, independent second opinions (read-only by default) |
+| `heavy` | opus / high | senior | hard problems: gnarly debugging, cross-cutting refactors, security-sensitive code, failed builder attempts |
+| `builder` | sonnet / high | mid | standard implementation: stories, tests, ordinary refactors with clear DoD |
+| `skeptic` | sonnet / high | reviewer | adversarial review of builder/heavy diffs before acceptance (read-only) |
+| `scout` | sonnet / medium | junior+ | read-only recon: codebase investigation, tracing, external repo/doc surveys. Cannot write files — ask it to return content. |
+| `grunt` | haiku | junior | mechanical: renames, doc syncs, sweeps, test-suite runs, exact git/shell sequences |
 
 Spawn via `subagent_type: "<agent name>"` (Agent tool) or `agentType: "<agent name>"`
-(Workflow `agent()`). Fall back to `general-purpose` + `model` only if a named
-agent isn't loaded (definitions load at session start).
+(Workflow `agent()`).
+
+## Spawn budget (hard)
+
+- Named roster agents only. Never spawn bare `general-purpose` without an
+  explicit `model` — it inherits the main model (Opus). If a named agent isn't
+  loaded (definitions load at session start), fall back to `general-purpose`
+  with the `model` of the matching roster row.
+- Use as few workers as can complete the task well. Parallelize only genuinely
+  independent work; one worker per independent unit, not one per file.
+- At most 10 subagents in flight per session (enforced by
+  `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`). Target mix: ~60–80% `builder`,
+  ~10–20% `heavy`, the rest `scout`/`grunt`. At most 2 Opus workers at once.
+- Plans must be detailed enough for a mid-level (`builder`) worker. If a story
+  needs architecture thinking to implement, the plan is not done — finish it
+  here instead of escalating the worker tier.
 
 When unsure between two tiers, pick the cheaper one; escalate only after the
 first attempt comes back wrong or stuck, and say why it failed.
@@ -71,7 +85,7 @@ report format in a `schema` instead of prose.
    report. "Tests pass" without output = bounce back.
 2. Implementation work (builder/heavy) is NOT merged until a `skeptic` review
    returns approve, or the orchestrator explicitly waives review for a trivial
-   diff and says so to the user. (In takt the Opus review gate is this step.)
+   diff and says so to the user. (In takt the review gate is this step.)
 3. A second attempt at a failed task does NOT start until the failure of the
    first is understood and stated (re-route up a tier with that statement).
 
@@ -80,6 +94,8 @@ report format in a `schema` instead of prose.
 - The orchestrator grepping/reading whole files itself to "save time" — delegate it.
 - Delegating a one-line fix with a 500-word prompt — just do it.
 - Sequential workers for independent tasks — parallelize.
+- Fanning out 20+ workers for one task, or bare `general-purpose` spawns that
+  silently run on Opus.
 - Hand-rolled retry loops in chat when a Workflow script would do it.
 - Accepting "tests pass" without the pasted output.
 - Pasting a worker report verbatim as the user-facing summary.
