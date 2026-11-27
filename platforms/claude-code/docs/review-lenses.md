@@ -1,6 +1,6 @@
 ---
 source_id: seb-claude-tools
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Review Lenses
@@ -17,10 +17,51 @@ execution path; never write "probably". Every finding cites `file:line` and the
 causal chain. Never invent findings; if a lens finds nothing after a genuine
 attempt, say what was checked.
 
-Severity: **must-fix** = spec not met, bug, data loss, security hole, outage
-risk, undeclared dependency, committed secret/junk, or an explicit project rule
-broken. **suggestion** = real but not blocking. If unsure a must-fix is real,
-make it a suggestion; if it is real, never downgrade it.
+## Scope: review what was asked, nothing more (hard rule)
+
+You review whether THIS change does what its spec asked, correctly and
+safely, in THIS project's real environment. You do not get to widen the
+spec. Improvements, hardening, extra edge cases and "while we're here" ideas
+are not defects, however good they are.
+
+**must-fix** requires a `basis`, and only these four count:
+1. `criterion:<id>`: an acceptance criterion of the spec is not met.
+2. `rule:<source>`: an explicit project rule (CLAUDE.md, AGENTS.md, project
+   checklist, Munin convention) is broken; quote the rule.
+3. `failure:<scenario>`: the code fails under normal use in this project's
+   real environment (the stack, hosts and accounts the project actually
+   uses), on a path the change introduced or touched. Describe the realistic
+   scenario.
+4. `security:<scenario>`: a weakness exploitable in this project's actual
+   deployment, introduced or touched by the change.
+
+A finding with no basis from this list is not a must-fix. Test before tagging
+must-fix: "would the stakeholder actually hit this, using what they asked
+for, where it really runs?" If no, it is not a must-fix.
+
+**suggestion**: a real defect that fails the test above (rare inputs, unusual
+setups) but sits in changed code. Never blocks.
+
+**follow_up**: anything outside the spec: hardening, environments the
+project does not use (e.g. GitHub Enterprise, exotic remote formats),
+features the spec did not ask for, refactors, nicer error messages, code
+the change did not touch, files outside the repo. Propose it in one line as
+a possible follow-up implementation. Never blocks and never goes to a fix
+worker.
+
+If unsure between two levels, pick the lower one. A must-fix that meets the
+test is never downgraded.
+
+## Re-review cycles
+
+Cycle 1 reviews the whole change. Every later cycle is a re-review of fixes,
+like a PR re-review:
+- For each open must-fix, check whether the fix resolves it: mark it
+  `fixed`, or leave it `open` with a note.
+- Review only the lines the fixes changed, and only for defects the fixes
+  introduced. Do not re-review the rest of the change and do not raise new
+  findings on code the fixes did not touch: if you notice one, record it as
+  a follow_up.
 
 ---
 
@@ -31,13 +72,15 @@ verbatim. Judge against those, never against the implementer's report.
 
 - **Criterion by criterion:** for each acceptance criterion, state met / not
   met and the evidence (`file:line`, test, or command output).
-- **Missing cases:** inputs or states the spec implies but the code does not
-  handle (empty, zero, max, duplicate, concurrent, unicode, missing config).
+- **Missing cases:** inputs or states the spec implies, and that occur in
+  real use, but the code does not handle (empty, zero, max, duplicate,
+  missing config). Cases the spec does not imply are follow_ups.
 - **Gamed validation:** tests weakened, skipped, or asserting the wrong thing;
   hardcoded results; a test that passes for the wrong reason.
 - **Absence:** what should be in the change and is not (error handling, a test
   for the new path, call sites not updated, docs/config the spec names).
-- **Scope creep:** behaviour added that the spec did not ask for.
+- **Scope creep in the change:** behaviour the implementer added that the
+  spec did not ask for (flag it; do not ask for more of it).
 - **Name vs behaviour:** does each new function do what its name and comments
   say?
 - Re-run the stated validation commands when feasible and compare with the
@@ -109,6 +152,9 @@ security review.
 ## Output
 
 Report per lens: `functional`, `technical`, `security`. Each finding:
-severity, `file:line`, finding, evidence, impact (and fix for security). Then
-a verdict: `approve` / `request_changes` (or the caller's format, e.g. takt's
-`review-comments.json`). End with what was verified per lens.
+severity (`must-fix` | `suggestion`), `basis` (required for must-fix, see
+Scope), `file:line`, finding, evidence, impact (and fix for security). List
+`follow_ups` separately, one line each. Then a verdict: `approve` /
+`request_changes` (or the caller's format, e.g. takt's
+`review-comments.json`). Only must-fix findings make the verdict
+`request_changes`. End with what was verified per lens.
