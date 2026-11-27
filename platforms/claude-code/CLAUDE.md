@@ -16,6 +16,7 @@ agentic-tools — a shareable collection of custom Claude Code agents, commands,
 ```
 agents/          → installs to ~/.claude/agents/
 docs/            → installs to ~/.claude/docs/
+lib/             → shell helpers (*.sh, `# source_id`/`# version` header comments); installs to ~/.claude/lib/
 skills/          → category-first source; installs to ~/.claude/skills/
 install.sh       → installer script
 ```

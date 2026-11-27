@@ -38,7 +38,7 @@ RETIRED_AGENT_FILES=(
 
 get_version() {
     local file="$1"
-    grep -m1 '^version:' "$file" 2>/dev/null | sed 's/version: *//' || echo "unknown"
+    grep -m1 -E '^(# )?version:' "$file" 2>/dev/null | sed -E 's/^(# )?version: *//' || echo "unknown"
 }
 
 check_and_install() {
@@ -164,6 +164,16 @@ for f in "$SCRIPT_DIR"/docs/*.md; do
     if [ -f "$f" ]; then
         echo "Docs → $CLAUDE_DIR/docs/"
         check_and_install "$f" "$CLAUDE_DIR/docs"
+        echo ""
+    fi
+done
+
+# Install lib scripts (shell helpers agents call, e.g. codex-review.sh)
+for f in "$SCRIPT_DIR"/lib/*.sh; do
+    if [ -f "$f" ]; then
+        echo "Lib → $CLAUDE_DIR/lib/"
+        check_and_install "$f" "$CLAUDE_DIR/lib"
+        chmod +x "$CLAUDE_DIR/lib/$(basename "$f")" "$CLAUDE_DIR/lib/${PREFIX}$(basename "$f")" 2>/dev/null
         echo ""
     fi
 done

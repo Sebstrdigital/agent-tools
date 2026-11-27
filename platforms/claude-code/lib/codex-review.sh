@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# source_id: seb-claude-tools
+# version: 1.0.0
 # codex-review.sh — run a read-only Codex review detached, with liveness checks
 # instead of a hard timeout.
 #
