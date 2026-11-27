@@ -26,7 +26,7 @@ Workers' job: edit files, run commands, gather evidence, report back.
 | `principal` | fable | architect (rare) | hardest judgment calls: scope/trade-off decisions, conflicting requirements, architecture choices, risk assessment, independent second opinions (read-only by default) |
 | `heavy` | opus / high | senior | hard problems: gnarly debugging, cross-cutting refactors, security-sensitive code, failed builder attempts |
 | `builder` | sonnet / high | mid | standard implementation: stories, tests, ordinary refactors with clear DoD |
-| `skeptic` | sonnet / high | reviewer | adversarial review of builder/heavy diffs before acceptance (read-only) |
+| `skeptic` | haiku relay → Codex gpt-6.2-sol / high | reviewer | adversarial review of builder/heavy diffs before acceptance (read-only). Returns `CODEX_UNAVAILABLE` on failure → re-spawn with `model: sonnet` and `mode: direct` |
 | `scout` | sonnet / medium | junior+ | read-only recon: codebase investigation, tracing, external repo/doc surveys. Cannot write files — ask it to return content. |
 | `general-purpose` | opus / medium | generalist | anything no roster row fits — research, mixed multi-step tasks |
 | `grunt` | haiku | junior | mechanical: renames, doc syncs, sweeps, test-suite runs, exact git/shell sequences |
